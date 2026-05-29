@@ -1,23 +1,34 @@
 import { Session } from 'better-auth';
 import { Role } from '../constants/roles';
 
+import 'express';
+
+/**
+ * Represents an authenticated user attached to the request object.
+ * Set by requireAuth middleware from betterAuth session.
+ */
 export interface AuthUser {
   id: string;
-  name: string;
   email: string;
-  role: Role;
   emailVerified: boolean;
-  image?: string | null;
+  name: string | null;
+  image: string | null;
+  role: 'student' | 'admin';
   createdAt: Date;
   updatedAt: Date;
+  // Custom fields from our user schema
+  profileImageUrl?: string | null;
+  lastLoginAt?: Date;
 }
 
-// Augment Express Request with better-auth session
 declare global {
   namespace Express {
     interface Request {
+      /**
+       * Current authenticated user (set by requireAuth middleware).
+       * undefined if user is not authenticated.
+       */
       user?: AuthUser;
-      session?: Session & { userId?: string };
     }
   }
 }
