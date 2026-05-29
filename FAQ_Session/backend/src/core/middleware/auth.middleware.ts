@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { getAuth } from '../../config/auth';
 import { UnauthorizedError, ForbiddenError } from '../errors';
-import { Role } from '../constants/roles';
+import { Role, Roles } from '../constants/roles';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { AuthUser } from '../types/express';
 
@@ -28,6 +28,11 @@ export const requireAuth = asyncHandler(
 /**
  * Requires that the authenticated user has one of the given roles.
  * Must be used after requireAuth.
+ *
+ * Admin gate: if admin role is required, the user must also have a verified
+ * email. This covers the case where someone is promoted to admin but never
+ * clicks the verification link — they stay locked out of admin routes until
+ * they do.
  */
 export const requireRole = (...roles: Role[]) =>
   asyncHandler(async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
@@ -38,6 +43,15 @@ export const requireRole = (...roles: Role[]) =>
     if (!roles.includes(req.user.role as Role)) {
       throw new ForbiddenError(
         `Forbidden – requires one of roles: ${roles.join(', ')}`,
+      );
+    }
+
+    // Admin access requires a verified email. When a user is promoted to
+    // admin, better-auth sends them a verification email. Until they verify,
+    // they cannot exercise admin privileges.
+    if (roles.includes(Roles.ADMIN) && req.user.role === Roles.ADMIN && !req.user.emailVerified) {
+      throw new ForbiddenError(
+        'Admin access requires a verified email address. Please check your inbox and verify your email to continue or send the verifiction email.',
       );
     }
 
