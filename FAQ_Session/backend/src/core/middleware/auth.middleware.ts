@@ -2,99 +2,58 @@ import { Request, Response, NextFunction } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { getAuth } from '../../config/auth';
 import { UnauthorizedError, ForbiddenError } from '../errors';
-import { Role } from '../constants/roles';
+import { Role, Roles } from '../constants/roles';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { AuthUser } from '../types/express';
-import { logger } from '../utils/logger';
 
 /**
- * Validates the betterAuth session and attaches user to req.user.
- * Thrown UnauthorizedError if session is invalid or missing.
+ * Validates the better-auth session and attaches user to req.user.
  */
 export const requireAuth = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const session = await getAuth().api.getSession({
-        headers: fromNodeHeaders(req.headers),
-      });
+    const session = await getAuth().api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
 
-      if (!session?.user) {
-        logger.warn('Authentication required but no valid session found');
-        throw new UnauthorizedError(
-          'Authentication required. Please sign in first.',
-        );
-      }
-
-      // Map betterAuth user to our AuthUser shape
-      req.user = session.user as unknown as AuthUser;
-      logger.debug(`User authenticated: ${req.user.id}`);
-      next();
-    } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        throw error;
-      }
-
-      logger.error('Session validation error', error);
-      throw new UnauthorizedError('Invalid or expired session');
+    if (!session?.user) {
+      throw new UnauthorizedError('Authentication required');
     }
+
+    // Map better-auth user to our AuthUser shape
+    req.user = session.user as unknown as AuthUser;
+    next();
   },
 );
 
 /**
  * Requires that the authenticated user has one of the given roles.
- * Must be used AFTER requireAuth middleware.
+ * Must be used after requireAuth.
  *
- * @example
- * ```ts
- * router.delete('/admin-only', requireAuth, requireRole(Roles.ADMIN), handler);
- * ```
+ * Admin gate: if admin role is required, the user must also have a verified
+ * email. This covers the case where someone is promoted to admin but never
+ * clicks the verification link — they stay locked out of admin routes until
+ * they do.
  */
 export const requireRole = (...roles: Role[]) =>
-  asyncHandler(
-    async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-      if (!req.user) {
-        logger.warn('Role check attempted without authentication');
-        throw new UnauthorizedError('Authentication required');
-      }
-
-      if (!roles.includes(req.user.role as Role)) {
-        logger.warn(
-          `User ${req.user.id} attempted to access resource requiring roles: ${roles.join(', ')}. User role: ${req.user.role}`,
-        );
-        throw new ForbiddenError(
-          `Access denied. This action requires one of: ${roles.join(', ')}`,
-        );
-      }
-
-      logger.debug(`User ${req.user.id} passed role check for: ${roles.join(', ')}`);
-      next();
-    },
-  );
-
-/**
- * Optional authentication middleware.
- * Attaches user to req.user if authenticated, but doesn't throw if not.
- * Useful for endpoints that have different behavior for authenticated vs. unauthenticated users.
- */
-export const optionalAuth = asyncHandler(
-  async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const session = await getAuth().api.getSession({
-        headers: fromNodeHeaders(req.headers),
-      });
-
-      if (session?.user) {
-        req.user = session.user as unknown as AuthUser;
-        logger.debug(`Optional auth: user authenticated ${req.user.id}`);
-      } else {
-        logger.debug('Optional auth: no valid session, continuing as guest');
-      }
-
-      next();
-    } catch (error) {
-      // Silently fail for optional auth
-      logger.debug('Optional auth check failed, continuing as guest');
-      next();
+  asyncHandler(async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new UnauthorizedError('Authentication required');
     }
-  },
-);
+
+    if (!roles.includes(req.user.role as Role)) {
+      throw new ForbiddenError(
+        `Forbidden – requires one of roles: ${roles.join(', ')}`,
+      );
+    }
+
+    // Admin access requires a verified email. When a user is promoted to
+    // admin, better-auth sends them a verification email. Until they verify,
+    // they cannot exercise admin privileges.
+    if (roles.includes(Roles.ADMIN) && req.user.role === Roles.ADMIN && !req.user.emailVerified) {
+      throw new ForbiddenError(
+        'Admin access requires a verified email address. Please check your inbox and verify your email to continue or send the verifiction email.',
+      );
+    }
+
+    next();
+  });

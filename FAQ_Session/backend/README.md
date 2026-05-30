@@ -39,7 +39,9 @@ src/
 │   ├── auth.ts                   # better-auth instance with email/password + admin plugin
 │   ├── db.ts                     # Mongoose connection with graceful error handling
 │   ├── env.ts                    # Zod-validated env (fails fast on missing vars)
-│   └── genai.ts                  # Google GenAI + Embeddings client singletons
+│   ├── genai.ts                  # Google GenAI + Embeddings client singletons
+│   ├── emailTemplates.ts         # HTML email templates (verification, password reset, etc.)
+│   └── mailer.ts                 # Nodemailer transporter setup + sendMail utility
 │
 ├── modules/                      # Feature modules (each is self-contained)
 │   ├── auth/
@@ -94,6 +96,8 @@ src/
 
 ## Data Flow
 
+## Data Flow
+
 ```
 Unauthenticated user
   └─ POST /api/queries          → Query { status: "pending" }
@@ -101,16 +105,21 @@ Unauthenticated user
 Authenticated user
   └─ POST /api/queries/:id/replies  → Reply { isApproved: false }
 
-Admin
+Admin (email must be verified)
   ├─ GET  /api/queries/:id/replies  → review replies
   └─ POST /api/replies/:id/approve
         → Reply.isApproved = true
         → Query.status     = "resolved"
         → FAQ created with embedding (sourceQueryId + approvedReplyId set)
 
-Admin (direct)
+Admin (direct, email must be verified)
   └─ POST /api/faqs             → FAQ created with embedding
                                    (sourceQueryId = null, approvedReplyId = null)
+
+Email Verification Flow
+  └─ POST /api/auth/send-verification-email  → mailer sends verification email
+        → user clicks link → emailVerified = true
+        → admin routes now accessible
 ```
 
 ---
@@ -131,14 +140,24 @@ cp .env.example .env
 
 Fill in `.env`:
 
-| Variable              | Description                                          |
-|-----------------------|------------------------------------------------------|
-| `MONGO_URI`           | MongoDB Atlas connection string                      |
-| `GOOGLE_API_KEY`      | Google AI API key (for Gemini embeddings)            |
-| `BETTER_AUTH_SECRET`  | Random secret ≥ 32 chars (`openssl rand -base64 32`) |
-| `BETTER_AUTH_URL`     | Your API base URL (e.g. `http://localhost:5000`)     |
-| `CORS_ORIGIN`         | Frontend origin (e.g. `http://localhost:3000`)       |
-| `SYSTEM_ADMIN_ID`     | Your System Admin ID (e.g. `6a17e7df3g57393t644d0d`) |
+| Variable             | Description                                                      |
+|----------------------|------------------------------------------------------------------|
+| `NODE_ENV`           | Environment (`development` \| `production`)                     |
+| `PORT`               | Port the server listens on (e.g. `5000`)                        |
+| `MONGO_URI`          | MongoDB Atlas connection string                                  |
+| `GOOGLE_API_KEY`     | Google AI API key (for Gemini embeddings)                        |
+| `BETTER_AUTH_SECRET` | Random secret ≥ 32 chars (`openssl rand -base64 32`)            |
+| `BETTER_AUTH_URL`    | Your API base URL (e.g. `http://localhost:5000`)                 |
+| `CORS_ORIGIN`        | Frontend origin (e.g. `http://localhost:3000`)                   |
+| `SYSTEM_ADMIN_ID`    | Your System Admin ID (e.g. `6a17e7df3g57393t644d0d`)            |
+| `GOOGLE_CLIENT_ID`   | Google OAuth client ID (from Google Cloud Console)              |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (from Google Cloud Console)        |
+| `SMTP_HOST`          | SMTP relay host (e.g. `smtp-relay.brevo.com`)                   |
+| `SMTP_PORT`          | SMTP port (e.g. `587`)                                          |
+| `SMTP_USER`          | SMTP login username                                              |
+| `SMTP_PASS`          | SMTP password or App Password (if 2FA is enabled)               |
+| `EMAIL_FROM`         | Sender email address (e.g. `you@gmail.com`)                     |
+| `EMAIL_FROM_NAME`    | Sender display name (e.g. `FAQ System`)                         |
 
 ### 3. Start Ollama (for LLM inference)
 
@@ -169,15 +188,34 @@ npm run build && npm start
 
 ## API Reference
 
-### Auth (better-auth built-ins)
+### Authentication & Authorization
 
-| Method | Path                        | Description         |
-|--------|-----------------------------|---------------------|
-| POST   | `/api/auth/sign-up/email`   | Register with email |
-| POST   | `/api/auth/sign-in/email`   | Login with email    |
-| POST   | `/api/auth/sign-out`        | Logout              |
-| GET    | `/api/auth/get-session`         | Get current session |
-| GET    | `/api/auth/me`              | Get current user    |
+Built using Better Auth with:
+
+- Email/password authentication
+- Google OAuth authentication
+- Session-based authentication
+- Role-based authorization (Student/Admin)
+- Email verification
+- Password reset via email
+- Admin verification enforcement
+
+#### Auth Routes
+
+| Method | Path                              | Description |
+|---------|-----------------------------------|-------------|
+| POST | `/api/auth/sign-up/email` | Register with email |
+| POST | `/api/auth/sign-in/email` | Login with email |
+| POST |` /api/auth/sign-in/social` | Google OAuth login |
+| POST | `/api/auth/sign-out` | Logout |
+| GET | `/api/auth/get-session` | Get current session |
+| GET | `/api/auth/me` | Get current authenticated user |
+| POST | `/api/auth/request-password-reset` | Send password reset email |
+| POST |` /api/auth/reset-password` | Reset password |
+| POST | `/api/auth/send-verification-email` | Send verification email |
+| GET | `/api/auth/verify-email` | Verify email |
+| GET |` /api/auth/callback/google` | Google OAuth callback |
+
 
 ### Queries
 
