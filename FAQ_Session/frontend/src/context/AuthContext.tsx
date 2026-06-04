@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { mockUsers } from '../utils/mockData';
 import { apiService } from '../utils/api';
 
 interface AuthContextType {
@@ -9,26 +8,26 @@ interface AuthContextType {
   isLoginModalOpen: boolean;
   openLoginModal: () => void;
   closeLoginModal: () => void;
-  loginAs: (userId: string) => void;
-  logout: () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(mockUsers.u1); // Pre-login with Guneet Toppo
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Sync current user session with backend
   useEffect(() => {
     const syncUser = async () => {
       try {
         const user = await apiService.getCurrentUser();
-        if (user) {
-          setCurrentUser(user);
-        }
+        if (user) setCurrentUser(user);
       } catch (err) {
-        console.error('Failed to sync user with backend:', err);
+        console.error('Failed to sync user:', err);
       }
     };
     syncUser();
@@ -37,14 +36,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
-  const loginAs = (userId: string) => {
-    if (mockUsers[userId]) {
-      setCurrentUser(mockUsers[userId]);
-      setIsLoginModalOpen(false);
+  const signIn = async (email: string, password: string) => {
+    await apiService.signIn(email, password);
+    const user = await apiService.getCurrentUser();
+    setCurrentUser(user);
+    setIsLoginModalOpen(false);
+  };
+
+  const signUp = async (name: string, email: string, password: string) => {
+    await apiService.signUp(name, email, password);
+    await signIn(email, password);
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      await apiService.signInWithGoogle();
+    } catch (err) {
+      throw new Error((err as Error).message || 'Google sign-in failed. Please try again.');
     }
   };
 
-  const logout = () => {
+  const forgotPassword = async (email: string) => {
+    await apiService.forgotPassword(email);
+  };
+
+  const logout = async () => {
+    try {
+      await apiService.signOut();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
     setCurrentUser(null);
   };
 
@@ -56,7 +77,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoginModalOpen,
         openLoginModal,
         closeLoginModal,
-        loginAs,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        forgotPassword,
         logout,
       }}
     >
@@ -72,4 +96,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
 export default AuthContext;
