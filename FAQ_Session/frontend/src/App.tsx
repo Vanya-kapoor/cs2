@@ -13,6 +13,7 @@ import AskQuestion from './pages/AskQuestion';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import { Categories, Trending, Bookmarks, MyQuestions } from './pages/HelperPages';
 
 function App() {
@@ -21,6 +22,10 @@ function App() {
       <AuthProvider>
         <MockDbProvider>
           <Routes>
+            {/* Standalone page — no layout chrome */}
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            {/* Main app with sidebar/navbar layout */}
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
               <Route path="faqs" element={<FAQPage />} />
