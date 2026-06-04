@@ -239,9 +239,9 @@ export const apiService = {
     }
   },
   async forgotPassword(email: string): Promise<void> {
-    const redirectTo = `${window.location.origin}/reset-password`;
-    await apiClient.post('/auth/forget-password', { email, redirectTo });
-  },
+  const redirectTo = `${window.location.origin}/reset-password`;
+  await apiClient.post('/auth/request-password-reset', { email, redirectTo });
+},
   async resetPassword(newPassword: string, token: string): Promise<void> {
     await apiClient.post('/auth/reset-password', { newPassword, token });
   },
