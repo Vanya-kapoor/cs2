@@ -96,8 +96,6 @@ src/
 
 ## Data Flow
 
-## Data Flow
-
 ```
 Unauthenticated user
   └─ POST /api/queries          → Query { status: "pending" }
