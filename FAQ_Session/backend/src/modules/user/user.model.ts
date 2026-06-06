@@ -18,6 +18,12 @@ const userSchema = new Schema<IUser>(
     },
     emailVerified: { type: Boolean, default: false },
     image: { type: String },
+    badges: [
+      {
+        badgeId: { type: Schema.Types.ObjectId, ref: 'Badge', required: true },
+        earnedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

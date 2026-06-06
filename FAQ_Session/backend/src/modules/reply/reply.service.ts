@@ -9,6 +9,9 @@ import { IFaq } from '../faq/faq.interface';
 import { NotFoundError, BadRequestError } from '../../core/errors';
 import { Messages } from '../../core/constants/messages';
 import { CreateReplyDtoType } from './reply.dto';
+import { BadgeService } from '../badge/badge.service';
+import { BadgeRepository } from '../badge/badge.repository';
+import { UserRepository } from '../user/user.repository';
 
 export interface ApproveReplyResult {
   faq: IFaq;
@@ -90,6 +93,18 @@ export class ReplyService extends BaseService {
     // Mark reply as approved & query as resolved
     const approvedReply = await this.replyRepo.markApproved(replyId);
     await this.queryRepo.markResolved(reply.queryId.toString());
+
+    // Badge Evaluation
+    const badgeService = new BadgeService(
+      new BadgeRepository(),
+      new UserRepository(),
+      this.replyRepo,
+      this.queryRepo
+    );
+    badgeService.evaluateContributionBadges(reply.userId.toString()).catch(console.error);
+    if (query.createdBy) {
+      badgeService.evaluateResolutionBadges(query.createdBy.toString()).catch(console.error);
+    }
 
     return { faq, reply: approvedReply! };
   }

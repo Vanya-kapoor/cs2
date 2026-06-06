@@ -4,6 +4,7 @@ import { Award, MessageSquare, ThumbsUp, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMockDb } from '../context/MockDbContext';
 import { EmptyState } from '../components/CommonWidgets';
+import { BadgeProfileSection } from '../components/badge/BadgeProfileSection';
 
 export const Profile: React.FC = () => {
   const { currentUser, openLoginModal } = useAuth();
@@ -131,43 +132,7 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Earned Achievements Badge Showcase */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm">
-        <h2 className="font-semibold text-lg text-slate-800 mb-4 flex items-center gap-2 font-sans">
-          <Award size={18} className="text-indigo-500" />
-          <span>Earned Internship Badges ({earnedBadges.length})</span>
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {badgeDetails.map((badge) => (
-            <motion.div
-              key={badge.name}
-              whileHover={badge.req ? { scale: 1.01 } : {}}
-              className={`p-4 border rounded-xl flex items-start gap-3 transition-all ${
-                badge.req
-                  ? 'bg-white border-slate-200 shadow-sm'
-                  : 'bg-slate-50/50 border-slate-100 opacity-50'
-              }`}
-            >
-              <div className="text-3xl p-1 bg-slate-50 border border-slate-100 rounded-full flex-shrink-0 w-12 h-12 flex items-center justify-center">
-                {badge.req ? badge.icon : '🔒'}
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-slate-800 flex items-center gap-1.5">
-                  {badge.name}
-                  {badge.req && (
-                    <span className="text-[8px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.5 rounded font-semibold">
-                      UNLOCKED
-                    </span>
-                  )}
-                </h4>
-                <p className="text-[10px] font-normal text-slate-500 mt-1.5 leading-normal">
-                  {badge.desc}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+      <BadgeProfileSection userId={currentUser.id} />
     </motion.div>
   );
 };

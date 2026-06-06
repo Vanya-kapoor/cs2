@@ -61,4 +61,14 @@ export class ReplyRepository extends BaseRepository<IReply> {
       );
     }
   }
+
+  async countApprovedByUserId(userId: string | Types.ObjectId): Promise<number> {
+    try {
+      return await ReplyModel.countDocuments({ userId, isApproved: true }).exec();
+    } catch (err) {
+      throw new DatabaseError(
+        `Failed to count approved replies for user: ${(err as Error).message}`,
+      );
+    }
+  }
 }

@@ -7,6 +7,10 @@ import { Messages } from '../../core/constants/messages';
 import { parsePagination, buildPaginatedResult } from '../../core/utils/pagination';
 import { PaginatedResult } from '../../core/types/api.types';
 import { CreateQueryDtoType } from './query.dto';
+import { BadgeService } from '../badge/badge.service';
+import { BadgeRepository } from '../badge/badge.repository';
+import { UserRepository } from '../user/user.repository';
+import { ReplyRepository } from '../reply/reply.repository';
 
 export interface QueryPaginationQuery {
   page?: string;
@@ -35,12 +39,24 @@ export class QueryService extends BaseService {
   }
 
   async createQuery(dto: CreateQueryDtoType, userId?: Types.ObjectId): Promise<IQuery> {
-    return this.queryRepo.create({
+    const query = await this.queryRepo.create({
       title: dto.title,
       description: dto.description,
       createdBy: userId ?? null,
       status: 'pending',
     });
+
+    if (userId) {
+      const badgeService = new BadgeService(
+        new BadgeRepository(),
+        new UserRepository(),
+        new ReplyRepository(),
+        this.queryRepo
+      );
+      badgeService.evaluateQueryBadges(userId.toString()).catch(console.error);
+    }
+
+    return query;
   }
 
   async deleteQuery(id: string): Promise<void> {
