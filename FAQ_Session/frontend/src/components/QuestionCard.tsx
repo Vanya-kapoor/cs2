@@ -135,9 +135,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, index }) =
             <span className="text-[9px] font-medium text-slate-400">Posted by</span>
             <span className="text-xs font-semibold text-slate-700 truncate max-w-[80px]">{question.author.name}</span>
           </div>
-          <div className="w-7 h-7 rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-sm shadow-sm">
-            {question.author.avatar}
-          </div>
+          <div className="w-7 h-7 rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-sm shadow-sm overflow-hidden">
+               {question.author.avatar?.startsWith('http') ? (
+               <img src={question.author.avatar} alt={question.author.name} referrerPolicy="no-referrer"
+               className="w-full h-full object-cover" />
+                  ) : (
+                 question.author.avatar
+                )}
+</div>
         </div>
       </div>
     </motion.div>

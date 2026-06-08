@@ -117,9 +117,14 @@ export const FAQDetailsPage: React.FC = () => {
 
         {/* Author Panel */}
         <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl w-fit shadow-none">
-          <div className="w-8 h-8 rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-lg shadow-sm">
-            {question.author.avatar}
-          </div>
+          <div className="w-8 h-8 rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-lg shadow-sm overflow-hidden">
+               {question.author.avatar?.startsWith('http') ? (
+                <img src={question.author.avatar} alt={question.author.name} referrerPolicy="no-referrer"
+               className="w-full h-full object-cover" />
+               ) : (
+                question.author.avatar
+              )}
+</div>
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-semibold text-slate-800 leading-none">{question.author.name}</span>

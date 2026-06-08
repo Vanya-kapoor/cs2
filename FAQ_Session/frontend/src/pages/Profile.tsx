@@ -71,8 +71,13 @@ export const Profile: React.FC = () => {
       {/* Profile Card Header */}
       <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
         {/* Large Avatar */}
-        <div className="w-24 h-24 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-5xl shadow-sm relative">
-          {currentUser.avatar}
+        <div className="w-24 h-24 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-5xl shadow-sm relative overflow-hidden">
+          {currentUser.avatar?.startsWith('http') ? (
+           <img src={currentUser.avatar} alt={currentUser.name} referrerPolicy="no-referrer"
+            className="w-full h-full object-cover" />
+            ) : (
+              currentUser.avatar
+             )}
           <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-900 border border-white text-[9px] text-white font-semibold rounded uppercase">
             {currentUser.role}
           </span>

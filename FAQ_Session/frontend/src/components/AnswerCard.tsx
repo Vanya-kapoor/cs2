@@ -47,8 +47,13 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
       {/* Answer Header: Author info */}
       <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-xl shadow-sm">
-            {answer.author.avatar}
+          <div className="w-10 h-10 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-xl shadow-sm overflow-hidden">
+            {answer.author.avatar?.startsWith('http') ? (
+              <img src={answer.author.avatar} alt={answer.author.name} referrerPolicy="no-referrer"
+                className="w-full h-full object-cover" />
+            ) : (
+              answer.author.avatar
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
