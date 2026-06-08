@@ -41,4 +41,20 @@ export class QueryRepository extends BaseRepository<IQuery> {
       throw new DatabaseError(`Failed to resolve query: ${(err as Error).message}`);
     }
   }
+
+  async countByUserId(userId: string): Promise<number> {
+    try {
+      return await QueryModel.countDocuments({ createdBy: userId }).exec();
+    } catch (err) {
+      throw new DatabaseError(`Failed to count queries for user: ${(err as Error).message}`);
+    }
+  }
+
+  async countResolvedByUserId(userId: string): Promise<number> {
+    try {
+      return await QueryModel.countDocuments({ createdBy: userId, status: 'resolved' }).exec();
+    } catch (err) {
+      throw new DatabaseError(`Failed to count resolved queries for user: ${(err as Error).message}`);
+    }
+  }
 }

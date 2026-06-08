@@ -1,5 +1,10 @@
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { Role } from '../../core/constants/roles';
+
+export interface IUserBadge {
+  badgeId: mongoose.Schema.Types.ObjectId;
+  earnedAt: Date;
+}
 
 export interface IUser extends Document {
   name: string;
@@ -7,6 +12,8 @@ export interface IUser extends Document {
   role: Role;
   emailVerified: boolean;
   image?: string;
+  badges: IUserBadge[];
   createdAt: Date;
   updatedAt: Date;
 }
+
