@@ -79,8 +79,16 @@ src/
 │   │   ├── chatbot.service.ts    # Multi-turn sessions with in-memory history
 │   │   └── chat.controller.ts    # /ask (stateless RAG) + /chatbot (multi-turn)
 │   │
+│   ├── badge/                    # Gamification system — badges, stats, leaderboards
+│   │   ├── badge.interface.ts    # IBadge, BadgeCategory enum
+│   │   ├── badge.model.ts        # Mongoose Badge model
+│   │   ├── badge.repository.ts   # findByCategory, findByName
+│   │   ├── badge.service.ts      # awardBadges, getUserBadges, getLeaderboard, getUserStats
+│   │   ├── badge.controller.ts   # GET all badges, user badges, leaderboard, stats
+│   │   ├── badge.routes.ts       # Badge routes
+│   │
 │   └── user/
-│       ├── user.model.ts         # Mirrors better-auth "user" collection
+│       ├── user.model.ts         # Mirrors better-auth "user" collection (with badges array)
 │       ├── user.interface.ts
 │       └── user.repository.ts
 │
@@ -109,6 +117,7 @@ Admin (email must be verified)
         → Reply.isApproved = true
         → Query.status     = "resolved"
         → FAQ created with embedding (sourceQueryId + approvedReplyId set)
+        → Badge evaluation: Award badges based on user contribution metrics
 
 Admin (direct, email must be verified)
   └─ POST /api/faqs             → FAQ created with embedding
@@ -201,7 +210,7 @@ Built using Better Auth with:
 #### Auth Routes
 
 | Method | Path                              | Description |
-|---------|-----------------------------------|-------------|
+|--------|-----------------------------------|-------------|
 | POST | `/api/auth/sign-up/email` | Register with email |
 | POST | `/api/auth/sign-in/email` | Login with email |
 | POST |` /api/auth/sign-in/social` | Google OAuth login |
@@ -230,7 +239,7 @@ Built using Better Auth with:
 |--------|-----------------------------------|---------------|------------------------------------------------|
 | POST   | `/api/queries/:queryId/replies`   | Authenticated | Reply to an open query                         |
 | GET    | `/api/queries/:queryId/replies`   | Admin         | List all replies for a query                   |
-| POST   | `/api/replies/:id/approve`        | Admin         | Approve reply → auto-creates FAQ with embedding |
+| POST   | `/api/replies/:id/approve`        | Admin         | Approve reply → auto-creates FAQ with embedding → awards badges |
 
 ### FAQs
 
@@ -242,6 +251,15 @@ Built using Better Auth with:
 | PATCH  | `/api/faqs/:id` | Admin      | Update question / answer (re-generates embedding)  |
 | DELETE | `/api/faqs/:id` | Admin      | Delete a FAQ                                       |
 
+### Badges & Gamification
+
+| Method | Path                         | Auth   | Description                                    |
+|--------|------------------------------|--------|------------------------------------------------|
+| GET    | `/api/badges`                | Public | List all available badges with criteria        |
+| GET    | `/api/badges/leaderboard`    | Public | Top 10 contributors ranked by approved replies |
+| GET    | `/api/badges/users/:userId`  | Public | Get user's earned badges with earned dates     |
+| GET    | `/api/badges/stats/:userId`  | Public | Get user statistics (replies, queries, stats)  |
+
 ### Chat
 
 | Method | Path                      | Auth   | Description                              |
@@ -249,6 +267,106 @@ Built using Better Auth with:
 | POST   | `/api/chat/ask`           | Public | Stateless RAG query                      |
 | POST   | `/api/chat/chatbot`       | Public | Multi-turn chatbot (pass `sessionId`)    |
 | POST   | `/api/chat/chatbot/clear` | Public | Clear a chatbot session                  |
+
+---
+
+## Badge System
+
+The badge system is a gamification layer that rewards users for contributions and engagement. Users earn badges automatically based on predefined criteria related to their activity.
+
+### Badge Categories
+
+Badges are organized into four categories:
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| **Contribution** | Awarded for creating helpful replies | "Helpful Contributor" (5 approved replies), "Expert Helper" (20 approved replies) |
+| **Query** | Awarded for asking questions | "Question Asker" (5 queries), "Curious Mind" (20 queries) |
+| **Resolution** | Awarded for solving problems | "Problem Solver" (5 resolved queries), "Community Champion" (20 resolved queries) |
+| **Leaderboard** | Achievement-based badges | "Top Contributor", "Rising Star" |
+
+### Badge Earning Logic
+
+Badges are automatically awarded when users meet the criteria:
+
+1. **When replying to queries**: After an admin approves a user's reply, the system checks if the user qualifies for contribution badges.
+   - Example: If a user has 5 approved replies, they earn the "5 Approved Replies" badge.
+
+2. **When submitting queries**: Badge evaluation triggers based on query count.
+   - Example: If a user has submitted 10 queries, they qualify for query badges.
+
+3. **When queries are resolved**: Resolution badges are awarded based on resolved query count.
+   - Example: If a user resolved 15 queries, they qualify for resolution badges.
+
+### Leaderboard
+
+The backend provides a leaderboard endpoint that dynamically ranks the top 10 contributors by approved replies:
+
+- **Endpoint**: `GET /api/badges/leaderboard`
+- **Returns**: Array of top 10 users ranked by `approvedCount` (descending)
+- **Data**: User info (name, email, image) + `approvedCount`
+- **Computation**: Runs MongoDB aggregation pipeline on approved replies in real-time
+
+**Note**: The frontend leaderboard UI component is not yet implemented. To display the leaderboard on the frontend, create a new page component that calls this endpoint.
+
+### Badge Data Model
+
+```ts
+Badge {
+  name:        string           // e.g., "Helpful Contributor"
+  description: string           // e.g., "Earned 5 approved replies"
+  icon:        string           // Icon emoji or URL
+  category:    BadgeCategory    // one of: contribution, query, resolution, leaderboard
+  criteria:    number           // Threshold (e.g., 5 for "5 approved replies")
+  createdAt / updatedAt
+}
+
+User {
+  ...
+  badges: IUserBadge[]           // Array of earned badges
+}
+
+IUserBadge {
+  badgeId:     ObjectId          // Reference to Badge
+  earnedAt:    Date              // When the badge was earned
+}
+```
+
+### Badge Endpoints
+
+#### Get all badges
+```
+GET /api/badges
+Response: { status: "success", data: Badge[] }
+```
+
+#### Get leaderboard (top 10 contributors)
+```
+GET /api/badges/leaderboard
+Response: { status: "success", data: [{ userId, name, email, image, approvedCount }, ...] }
+```
+
+#### Get user's badges
+```
+GET /api/badges/users/:userId
+Response: { status: "success", data: [{ badgeId, earnedAt }, ...] }
+```
+
+#### Get user statistics
+```
+GET /api/badges/stats/:userId
+Response: { status: "success", data: { approvedReplies, totalQueries, resolvedQueries, totalReplies, approvalRate } }
+```
+
+### Badge Evaluation Flow
+
+Badge evaluation happens automatically in these scenarios:
+
+1. **After a reply is approved** → `evaluateContributionBadges()` is called
+2. **After a query is created** → `evaluateQueryBadges()` is called
+3. **After a query is resolved** → `evaluateResolutionBadges()` is called
+
+Each evaluation compares the user's current metric against all available badges in that category and awards any that the user qualifies for but hasn't earned yet.
 
 ---
 
@@ -281,6 +399,16 @@ Reply {
   isApproved: boolean
   createdAt / updatedAt
 }
+
+User {
+  name:           string
+  email:          string
+  role:           Role
+  emailVerified:  boolean
+  image?:         string
+  badges:         IUserBadge[]        // Array of earned badge references with earned dates
+  createdAt / updatedAt
+}
 ```
 
 ---
@@ -290,7 +418,7 @@ Reply {
 - **S** — Each class has one responsibility: controllers handle HTTP, services handle logic, repositories handle data access.
 - **O** — `BaseRepository`, `BaseService`, `BaseController` are open for extension, closed for modification.
 - **L** — All concrete repositories/services can be substituted for their base types.
-- **I** — Interfaces (`IFaq`, `IQuery`, `IReply`, `RagResult`) are small and focused.
+- **I** — Interfaces (`IFaq`, `IQuery`, `IReply`, `IBadge`, `RagResult`) are small and focused.
 - **D** — Services depend on repositories via constructor injection, not concrete instantiation inside methods.
 
 ## Error Handling Strategy
