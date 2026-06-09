@@ -1,34 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MessageSquare, Plus } from 'lucide-react';
-import { useMockDb } from '../context/MockDbContext';
-import QuestionCard from '../components/QuestionCard';
-import { EmptyState } from '../components/CommonWidgets';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { MessageSquare, Plus } from "lucide-react";
+import { useAppContext } from "../context/AppContext";
+import QuestionCard from "../components/QuestionCard";
+import { EmptyState } from "../components/CommonWidgets";
 
 export const QuestionsFeed: React.FC = () => {
   const navigate = useNavigate();
-  const { questions } = useMockDb();
-  const [filter, setFilter] = useState<'newest' | 'trending' | 'upvoted' | 'unanswered'>('newest');
+  const { questions } = useAppContext();
+  const [filter, setFilter] = useState<"newest" | "unanswered" | "answered">(
+    "newest",
+  );
 
-  // Filter & sort questions
-  const filteredQuestions = [...questions].filter(q => {
-    if (filter === 'unanswered') {
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  const filteredQuestions = [...questions].filter((q) => {
+    if (q.isOfficial) return false;
+
+    const createdAt = new Date(q.createdAt).getTime();
+
+    if (createdAt < oneWeekAgo) return false;
+
+    if (filter === "unanswered") {
       return q.answers.length === 0;
     }
+
+    if (filter === "answered") {
+      return q.answers.length > 0;
+    }
+
     return true;
   });
 
-  const sortedQuestions = filteredQuestions.sort((a, b) => {
-    if (filter === 'trending') {
-      return b.views - a.views;
-    }
-    if (filter === 'upvoted') {
-      return b.upvotes - a.upvotes;
-    }
-    // newest (default)
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const sortedQuestions = filteredQuestions.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   return (
     <motion.div
@@ -51,7 +58,7 @@ export const QuestionsFeed: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate('/ask')}
+          onClick={() => navigate("/ask")}
           className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors border border-transparent shadow-sm self-start sm:self-auto"
         >
           <Plus size={16} />
@@ -61,17 +68,17 @@ export const QuestionsFeed: React.FC = () => {
 
       {/* Sorting Selectors */}
       <div className="flex flex-wrap items-center gap-1 bg-white p-1 border border-slate-200 rounded-xl w-fit shadow-sm">
-        {(['newest', 'trending', 'upvoted', 'unanswered'] as const).map((opt) => (
+        {(["newest", "unanswered", "answered"] as const).map((opt) => (
           <button
             key={opt}
             onClick={() => setFilter(opt)}
             className={`px-4 py-1.5 font-semibold text-xs uppercase transition-colors rounded-lg ${
               filter === opt
-                ? 'bg-blue-50 text-blue-700 font-semibold'
-                : 'hover:bg-slate-50 text-slate-500 hover:text-slate-900'
+                ? "bg-blue-50 text-blue-700 font-semibold"
+                : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
             }`}
           >
-            {opt === 'upvoted' ? 'Most Upvoted' : opt}
+            {opt}
           </button>
         ))}
       </div>

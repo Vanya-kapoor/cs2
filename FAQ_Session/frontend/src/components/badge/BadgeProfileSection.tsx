@@ -13,14 +13,17 @@ export const BadgeProfileSection: React.FC<BadgeProfileSectionProps> = ({ userId
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const response = await fetch(`/api/badges/users/${userId}`);
+        const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiBase}/badges/users/${userId}`, {
+          credentials: 'include',
+        });
         const data = await response.json();
         if (data.success && data.data) {
           const formattedBadges = data.data.map((b: any) => ({
-            name: b.badgeId.name,
-            description: b.badgeId.description,
-            icon: b.badgeId.icon,
-            category: b.badgeId.category,
+            name: b.badgeId?.name || b.name,
+            description: b.badgeId?.description || b.description,
+            icon: b.badgeId?.icon || b.icon,
+            category: b.badgeId?.category || b.category,
             earnedAt: b.earnedAt,
           }));
           setBadges(formattedBadges);
@@ -38,7 +41,13 @@ export const BadgeProfileSection: React.FC<BadgeProfileSectionProps> = ({ userId
   }, [userId]);
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="h-24 w-full bg-gray-200 rounded"></div></div>;
+    return (
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="animate-pulse flex space-x-4">
+          <div className="h-24 w-full bg-gray-200 rounded" />
+        </div>
+      </div>
+    );
   }
 
   return (

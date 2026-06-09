@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Question, Answer, User, QuestionStatus } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -19,21 +19,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Default system author for official FAQs
-const systemAdminUser: User = {
-  id: '60d5ec49f8cb2d3e1858a8a4',
-  name: 'Vicharanashala Lab',
-  role: 'ADMIN',
-  avatar: '🎓',
-  stats: {
-    questionsAsked: 0,
-    answersPosted: 50,
-    upvotesReceived: 200,
-    reputation: 1000,
-  },
-  badges: ['Official Lab', 'Mentor'],
-};
-
 interface ApiResponse<T> {
   status: string;
   message?: string;
@@ -50,31 +35,45 @@ interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// Map backend role strings to frontend UserRole
+const mapRole = (role?: string): 'ADMIN' | 'INTERN' | 'MENTOR' => {
+  if (!role) return 'INTERN';
+  const r = role.toLowerCase();
+  if (r === 'admin') return 'ADMIN';
+  if (r === 'mentor') return 'MENTOR';
+  return 'INTERN';
+};
+
 export const mapFaqToQuestion = (faq: any): Question => ({
   id: faq._id,
   title: faq.question,
   description: 'Official verified FAQ answer.',
-  category: faq.category || 'General',
   tags: faq.tags || ['faq', 'official'],
-  upvotes: faq.upvotes || 0,
-  views: faq.views || 0,
   isOfficial: true,
   isAccepted: true,
   status: 'RESOLVED',
-  followers: 1,
-  needsAttention: false,
   createdAt: faq.createdAt || new Date().toISOString(),
-  author: systemAdminUser,
-  upvotedBy: [],
-  bookmarkedBy: [],
-  followedBy: [],
+  author: {
+    id: faq.createdBy?._id || faq.createdBy || 'system',
+    name: faq.createdBy?.name || 'Vicharanashala Lab',
+    role: mapRole(faq.createdBy?.role),
+    avatar: faq.createdBy?.image || '🎓',
+    stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
+    badges: [],
+  },
   answers: [
     {
       id: `${faq._id}_ans`,
       questionId: faq._id,
-      author: systemAdminUser,
+      author: {
+        id: faq.createdBy?._id || faq.createdBy || 'system',
+        name: faq.createdBy?.name || 'Vicharanashala Lab',
+        role: mapRole(faq.createdBy?.role),
+        avatar: faq.createdBy?.image || '🎓',
+        stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
+        badges: [],
+      },
       content: faq.answer,
-      upvotes: faq.upvotes || 0,
       isOfficial: true,
       isAccepted: true,
       createdAt: faq.createdAt || new Date().toISOString(),
@@ -88,14 +87,13 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
     questionId: query._id,
     author: {
       id: rep.userId?._id || rep.userId || 'user',
-      name: rep.userId?.name || 'Intern Contributor',
-      role: rep.userId?.role?.toUpperCase() || 'INTERN',
-      avatar: '🦊',
-      stats: { questionsAsked: 1, answersPosted: 2, upvotesReceived: 10, reputation: 50 },
+      name: rep.userId?.name || 'Contributor',
+      role: mapRole(rep.userId?.role),
+      avatar: rep.userId?.image || '🦊',
+      stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
       badges: [],
     },
     content: rep.content,
-    upvotes: 0,
     isOfficial: rep.userId?.role === 'admin' || rep.userId?.role === 'mentor',
     isAccepted: rep.isApproved,
     createdAt: rep.createdAt,
@@ -103,32 +101,30 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
 
   const hasAccepted = mappedAnswers.some((ans) => ans.isAccepted);
 
+  const mapQueryStatus = (s: string): QuestionStatus => {
+    if (s === 'resolved') return 'RESOLVED';
+    if (s === 'answered') return 'ANSWERED';
+    return 'OPEN';
+  };
+
   return {
     id: query._id,
     title: query.title,
     description: query.description || '',
-    category: query.category || 'General',
     tags: query.tags || ['query'],
-    upvotes: query.upvotes || 0,
-    views: query.views || 0,
     isOfficial: false,
     isAccepted: hasAccepted,
-    status: (hasAccepted ? 'RESOLVED' : query.status === 'resolved' ? 'ANSWERED' : 'OPEN') as QuestionStatus,
-    followers: 1,
-    needsAttention: query.status === 'pending',
+    status: hasAccepted ? 'RESOLVED' : mapQueryStatus(query.status),
     createdAt: query.createdAt,
     author: {
       id: query.createdBy?._id || query.createdBy || 'anonymous',
-      name: query.createdBy?.name || 'Anonymous Intern',
-      role: 'INTERN',
-      avatar: '🧑‍💻',
-      stats: { questionsAsked: 1, answersPosted: 0, upvotesReceived: 0, reputation: 10 },
+      name: query.createdBy?.name || 'Anonymous',
+      role: mapRole(query.createdBy?.role),
+      avatar: query.createdBy?.image || '🧑‍💻',
+      stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
       badges: [],
     },
     answers: mappedAnswers,
-    upvotedBy: [],
-    bookmarkedBy: [],
-    followedBy: [],
   };
 };
 
@@ -156,16 +152,19 @@ export const apiService = {
   },
 
   // --- Queries ---
-  async getQueries(): Promise<Question[]> {
+  async getQueries(isAdmin = false): Promise<Question[]> {
     try {
       const response = await apiClient.get<PaginatedResponse<any>>('/queries?limit=100');
       const queries = response.data.data || [];
+
+      // Always fetch replies for all queries so users can see answered ones
       return await Promise.all(
         queries.map(async (q: any) => {
           try {
             const repsResponse = await apiClient.get<ApiResponse<any[]>>(`/queries/${q._id}/replies`);
-            return mapQueryToQuestion(q, repsResponse.data.data);
+            return mapQueryToQuestion(q, repsResponse.data.data || []);
           } catch {
+            // If replies fetch fails (e.g. non-admin on restricted endpoint), return query without replies
             return mapQueryToQuestion(q, []);
           }
         })
@@ -190,11 +189,10 @@ export const apiService = {
         name: 'You',
         role: 'INTERN',
         avatar: '🦊',
-        stats: { questionsAsked: 1, answersPosted: 1, upvotesReceived: 0, reputation: 10 },
+        stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
         badges: [],
       },
       content: rep.content,
-      upvotes: 0,
       isOfficial: false,
       isAccepted: false,
       createdAt: rep.createdAt,
@@ -202,6 +200,9 @@ export const apiService = {
   },
   async approveReply(replyId: string): Promise<void> {
     await apiClient.post(`/replies/${replyId}/approve`);
+  },
+  async deleteReply(replyId: string): Promise<void> {
+    await apiClient.delete(`/replies/${replyId}`);
   },
   async deleteQuery(id: string): Promise<void> {
     await apiClient.delete(`/queries/${id}`);
@@ -218,6 +219,32 @@ export const apiService = {
   },
   async clearChatSession(sessionId: string): Promise<void> {
     await apiClient.post('/chat/chatbot/clear', { sessionId });
+  },
+
+  // --- Badges ---
+  async getUserBadges(userId: string): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>(`/badges/users/${userId}`);
+      return response.data.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async getUserStats(userId: string): Promise<{ approvedReplies: number; totalQueries: number; resolvedQueries: number; totalReplies: number; approvalRate: number }> {
+    try {
+      const response = await apiClient.get<ApiResponse<any>>(`/badges/stats/${userId}`);
+      return response.data.data;
+    } catch {
+      return { approvedReplies: 0, totalQueries: 0, resolvedQueries: 0, totalReplies: 0, approvalRate: 0 };
+    }
+  },
+  async getLeaderboard(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>('/badges/leaderboard');
+      return response.data.data || [];
+    } catch {
+      return [];
+    }
   },
 
   // --- Auth ---
@@ -239,9 +266,9 @@ export const apiService = {
     }
   },
   async forgotPassword(email: string): Promise<void> {
-  const redirectTo = `${window.location.origin}/reset-password`;
-  await apiClient.post('/auth/request-password-reset', { email, redirectTo });
-},
+    const redirectTo = `${window.location.origin}/reset-password`;
+    await apiClient.post('/auth/request-password-reset', { email, redirectTo });
+  },
   async resetPassword(newPassword: string, token: string): Promise<void> {
     await apiClient.post('/auth/reset-password', { newPassword, token });
   },
@@ -253,18 +280,28 @@ export const apiService = {
       const response = await apiClient.get<ApiResponse<any>>('/auth/me');
       const dbUser = response.data.data;
       if (!dbUser) return null;
+
+      const userId = dbUser.id || dbUser._id;
+
+      const [statsData, badgesData] = await Promise.all([
+        apiService.getUserStats(userId),
+        apiService.getUserBadges(userId),
+      ]);
+
+      const badgeNames: string[] = badgesData.map((b: any) => b.badgeId?.name || b.name || 'Badge');
+
       return {
-        id: dbUser.id || dbUser._id,
+        id: userId,
         name: dbUser.name || 'User',
-        role: (dbUser.role || 'INTERN').toUpperCase() as any,
+        role: mapRole(dbUser.role),
         avatar: dbUser.image || '🍒',
         stats: {
-          questionsAsked: 4,
-          answersPosted: 10,
-          upvotesReceived: 20,
-          reputation: 150,
+          questionsAsked: statsData.totalQueries,
+          answersPosted: statsData.totalReplies,
+          upvotesReceived: statsData.approvedReplies,
+          reputation: statsData.approvedReplies * 15 + statsData.totalQueries * 10,
         },
-        badges: dbUser.role === 'admin' ? ['FAQ Expert'] : ['First Question'],
+        badges: badgeNames,
       };
     } catch {
       return null;

@@ -71,4 +71,7 @@ export class ReplyRepository extends BaseRepository<IReply> {
       );
     }
   }
+async deleteById(replyId: string): Promise<IReply | null> {
+  return ReplyModel.findByIdAndDelete(replyId);
+}
 }

@@ -12,6 +12,7 @@ import { CreateReplyDtoType } from './reply.dto';
 import { BadgeService } from '../badge/badge.service';
 import { BadgeRepository } from '../badge/badge.repository';
 import { UserRepository } from '../user/user.repository';
+import { ForbiddenError } from '../../core/errors';
 
 export interface ApproveReplyResult {
   faq: IFaq;
@@ -108,4 +109,17 @@ export class ReplyService extends BaseService {
 
     return { faq, reply: approvedReply! };
   }
+async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {
+  const reply = await this.replyRepo.findById(replyId);
+  if (!reply) throw new NotFoundError('Reply not found');
+
+  const isOwner = reply.userId.toString() === userId.toString();
+  const isAdmin = userRole === 'admin';
+
+  if (!isOwner && !isAdmin) {
+    throw new ForbiddenError('You can only delete your own replies');
+  }
+
+  await this.replyRepo.deleteById(replyId);
+}
 }
