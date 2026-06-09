@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ThumbsUp, Eye } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Question } from '../types';
-import { CategoryChip, OfficialBadge } from './CommonWidgets';
+import { OfficialBadge } from './CommonWidgets';
 
 interface FAQCardProps {
   faq: Question;
@@ -24,8 +24,7 @@ export const FAQCard: React.FC<FAQCardProps> = ({ faq, index }) => {
     >
       <div>
         {/* Metadata row */}
-        <div className="flex items-center justify-between gap-2 mb-3.5">
-          <CategoryChip category={faq.category} />
+        <div className="flex items-center justify-end gap-2 mb-3.5">
           {faq.isOfficial && <OfficialBadge type="official" />}
         </div>
 
@@ -40,18 +39,11 @@ export const FAQCard: React.FC<FAQCardProps> = ({ faq, index }) => {
         </p>
       </div>
 
-      {/* Footer statistics */}
+      {/* Footer */}
       <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
-        <div className="flex items-center gap-3 text-xs font-medium text-slate-400">
-          <span className="flex items-center gap-1">
-            <ThumbsUp size={13} className="text-slate-400" />
-            <span>{faq.upvotes}</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye size={13} />
-            <span>{faq.views}</span>
-          </span>
-        </div>
+        <span className="text-xs font-medium text-slate-400">
+          {faq.answers.length} {faq.answers.length === 1 ? 'answer' : 'answers'}
+        </span>
         <span className="flex items-center justify-center w-7 h-7 rounded-full border border-slate-200 text-slate-400 bg-white hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors">
           <ArrowRight size={13} />
         </span>

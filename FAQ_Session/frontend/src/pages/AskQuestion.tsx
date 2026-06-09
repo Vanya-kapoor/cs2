@@ -2,37 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Send, FileText, AlertCircle } from 'lucide-react';
-import { useMockDb } from '../context/MockDbContext';
+import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Question } from '../types';
 
 export const AskQuestion: React.FC = () => {
   const navigate = useNavigate();
-  const { askQuestion, questions } = useMockDb();
+  const { askQuestion, questions } = useAppContext();
   const { currentUser, openLoginModal } = useAuth();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Stipend');
   const [tagsInput, setTagsInput] = useState('');
   const [similarQuestions, setSimilarQuestions] = useState<Question[]>([]);
-
-  // Category Options
-  const categories = [
-    'Stipend',
-    'PPO',
-    'Eligibility',
-    'Interview Process',
-    'Projects',
-    'Joining Formalities',
-    'Company Policies',
-    'Technical Issues'
-  ];
 
   // Dynamic "Similar Questions" check
   useEffect(() => {
     if (title.trim().length > 3) {
-      const matches = questions.filter(q => 
+      const matches = questions.filter(q =>
         q.title.toLowerCase().includes(title.toLowerCase())
       ).slice(0, 3);
       setSimilarQuestions(matches);
@@ -47,17 +34,9 @@ export const AskQuestion: React.FC = () => {
       openLoginModal();
       return;
     }
-    if (!title.trim() || !description.trim() || !category) return;
+    if (!title.trim() || !description.trim()) return;
 
-    // Parse tags comma-separated
-    const tags = tagsInput
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
-
-    askQuestion(title.trim(), description.trim(), category, tags);
-    
-    // Redirect to feed
+    askQuestion(title.trim(), description.trim());
     navigate('/questions');
   };
 
@@ -77,7 +56,7 @@ export const AskQuestion: React.FC = () => {
           </div>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-800 font-sans leading-tight">Ask Onboarding Query</h1>
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
-            Get official verified answers from Mentors & HR Admins
+            Get official verified answers from Mentors &amp; HR Admins
           </p>
         </div>
 
@@ -135,7 +114,7 @@ export const AskQuestion: React.FC = () => {
                           {q.title}
                         </h4>
                         <p className="text-[9px] text-slate-400 font-medium uppercase mt-0.5">
-                          {q.category} • {q.answers.length} Answers
+                          {q.answers.length} Answers
                         </p>
                       </div>
                     ))}
@@ -143,22 +122,6 @@ export const AskQuestion: React.FC = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-
-          {/* Category Selector */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Select Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none text-sm font-medium bg-slate-50/50 hover:bg-slate-50 cursor-pointer focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Description Details */}
@@ -188,7 +151,7 @@ export const AskQuestion: React.FC = () => {
               className="w-full p-3 border border-slate-200 rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
             />
             <p className="text-[10px] text-slate-400 font-medium leading-none pl-1 mt-1">
-              Add up to 5 keywords to help others categorize this question.
+              Add up to 5 keywords to help others find this question.
             </p>
           </div>
 
@@ -208,7 +171,7 @@ export const AskQuestion: React.FC = () => {
                 onClick={openLoginModal}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors border border-transparent shadow-sm cursor-pointer"
               >
-                <span>Unlock & Submit Query 🔓</span>
+                <span>Unlock &amp; Submit Query 🔓</span>
               </button>
             )}
           </div>

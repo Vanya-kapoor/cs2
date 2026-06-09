@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ThumbsUp, Check } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { Answer } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { useMockDb } from '../context/MockDbContext';
+import { useAppContext } from '../context/AppContext';
 import { OfficialBadge } from './CommonWidgets';
 
 interface AnswerCardProps {
@@ -14,19 +14,27 @@ interface AnswerCardProps {
 
 export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId, isQuestionResolved }) => {
   const { currentUser } = useAuth();
-  const { upvoteAnswer, acceptAnswer } = useMockDb();
-
-  const handleUpvote = () => {
-    upvoteAnswer(answer.questionId, answer.id);
-  };
+  const { acceptAnswer, deleteReply } = useAppContext();
+  const [deleting, setDeleting] = useState(false);
 
   const handleAccept = () => {
     acceptAnswer(answer.questionId, answer.id);
   };
 
-  // Can the current user accept solutions?
-  // Only if they are the author of the question, or they are an Admin!
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this reply?')) return;
+    setDeleting(true);
+    try {
+      await deleteReply(answer.questionId, answer.id);
+    } catch (err) {
+      console.error('Failed to delete reply:', err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const canAccept = currentUser && (currentUser.id === questionAuthorId || currentUser.role === 'ADMIN');
+  const canDelete = currentUser && (currentUser.id === answer.author.id || currentUser.role === 'ADMIN');
 
   return (
     <motion.div
@@ -38,7 +46,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
     >
       {/* Ribbon for accepted answers */}
       {answer.isAccepted && (
-        <div className="absolute top-[-10px] right-4 bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 rounded-full shadow-sm border border-emerald-500 animate-none">
+        <div className="absolute top-[-10px] right-4 bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 rounded-full shadow-sm border border-emerald-500">
           <Check size={10} />
           <span>Pinned Solution</span>
         </div>
@@ -61,9 +69,6 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
               <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
                 {answer.author.role}
               </span>
-              <span className="text-[10px] text-slate-500 font-medium">
-                🏆 {answer.author.stats.reputation} Rep
-              </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium mt-0.5">
               Replied on {new Date(answer.createdAt).toLocaleDateString(undefined, {
@@ -75,10 +80,20 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
           </div>
         </div>
 
-        {/* Official status badges */}
+        {/* Official status badges + delete */}
         <div className="flex flex-col items-end gap-1.5">
           {answer.isOfficial && <OfficialBadge type="official" />}
           {answer.isAccepted && !answer.isOfficial && <OfficialBadge type="accepted" />}
+          {canDelete && !answer.isAccepted && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 text-rose-500 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors disabled:opacity-40 cursor-pointer"
+              title="Delete Reply"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -87,19 +102,9 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
         {answer.content}
       </p>
 
-      {/* Actions Row */}
-      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-        {/* Upvoting */}
-        <button
-          onClick={handleUpvote}
-          className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg shadow-sm transition-colors text-xs font-semibold"
-        >
-          <ThumbsUp size={12} className="text-slate-400" />
-          <span>{answer.upvotes} Upvotes</span>
-        </button>
-
-        {/* Pin as Accepted button */}
-        {canAccept && !answer.isAccepted && !isQuestionResolved && (
+      {/* Accept button (admin or question author) */}
+      {canAccept && !answer.isAccepted && !isQuestionResolved && (
+        <div className="flex items-center justify-end border-t border-slate-100 pt-3">
           <button
             onClick={handleAccept}
             className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors border border-transparent"
@@ -107,8 +112,8 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
             <Check size={12} />
             <span>Accept Solution</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 };

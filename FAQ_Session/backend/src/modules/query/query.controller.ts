@@ -24,11 +24,9 @@ export class QueryController extends BaseController {
     // Public – any user (authenticated or not) can raise a query
     this.router.post('/', validate(CreateQueryDto), asyncHandler(this.createQuery.bind(this)));
 
-    // Admin – list all queries with optional status filter
+    // list all queries with optional status filter
     this.router.get(
       '/',
-      requireAuth,
-      requireRole(Roles.ADMIN),
       asyncHandler(this.getQueries.bind(this)),
     );
 

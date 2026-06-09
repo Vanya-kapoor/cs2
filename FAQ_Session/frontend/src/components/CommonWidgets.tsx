@@ -1,48 +1,11 @@
 import React from 'react';
-import { ShieldCheck, Award, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ShieldCheck, Award, CheckCircle } from 'lucide-react';
 
 // ==========================================
-// 1. CategoryChip
-// ==========================================
-interface CategoryChipProps {
-  category: string;
-  onClick?: () => void;
-  active?: boolean;
-}
-
-export const CategoryChip: React.FC<CategoryChipProps> = ({ category, onClick, active = false }) => {
-  const getCategoryColor = (cat: string) => {
-    switch (cat.toLowerCase()) {
-      case 'stipend': return 'bg-amber-50 text-amber-700 border-amber-200/50';
-      case 'ppo': return 'bg-emerald-50 text-emerald-700 border-emerald-200/50';
-      case 'eligibility': return 'bg-sky-50 text-sky-700 border-sky-200/50';
-      case 'interview process': return 'bg-pink-50 text-pink-700 border-pink-200/50';
-      case 'projects': return 'bg-violet-50 text-violet-700 border-violet-200/50';
-      case 'joining formalities': return 'bg-orange-50 text-orange-700 border-orange-200/50';
-      case 'company policies': return 'bg-slate-50 text-slate-700 border-slate-200/50';
-      case 'technical issues': return 'bg-rose-50 text-rose-700 border-rose-200/50';
-      default: return 'bg-slate-50 text-slate-600 border-slate-200/50';
-    }
-  };
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      className={`px-2.5 py-0.5 rounded-full border text-xs font-medium transition-all ${
-        onClick ? 'cursor-pointer hover:bg-slate-100 hover:text-slate-900' : ''
-      } ${active ? 'bg-blue-600 border-blue-600 text-white shadow-none' : getCategoryColor(category)}`}
-    >
-      #{category}
-    </button>
-  );
-};
-
-// ==========================================
-// 2. StatusBadge
+// 1. StatusBadge
 // ==========================================
 interface StatusBadgeProps {
-  status: 'OPEN' | 'ANSWERED' | 'ESCALATED' | 'UNDER_REVIEW' | 'RESOLVED';
+  status: 'OPEN' | 'ANSWERED' | 'RESOLVED';
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
@@ -52,10 +15,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Open' };
       case 'ANSWERED':
         return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Answered' };
-      case 'ESCALATED':
-        return { bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Escalated' };
-      case 'UNDER_REVIEW':
-        return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Under Review' };
       case 'RESOLVED':
         return { bg: 'bg-purple-50 text-purple-700 border-purple-200', label: 'Resolved' };
       default:
@@ -67,7 +26,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold border rounded-full ${style.bg}`}>
-      {status === 'ESCALATED' && <AlertTriangle size={11} />}
       {status === 'RESOLVED' && <CheckCircle size={11} />}
       {style.label}
     </span>
@@ -75,7 +33,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 };
 
 // ==========================================
-// 3. OfficialBadge
+// 2. OfficialBadge
 // ==========================================
 interface OfficialBadgeProps {
   type: 'official' | 'accepted';
@@ -100,7 +58,7 @@ export const OfficialBadge: React.FC<OfficialBadgeProps> = ({ type }) => {
 };
 
 // ==========================================
-// 4. StatsCard
+// 3. StatsCard
 // ==========================================
 interface StatsCardProps {
   title: string;
@@ -124,7 +82,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, color, icon 
 };
 
 // ==========================================
-// 5. EmptyState
+// 4. EmptyState
 // ==========================================
 interface EmptyStateProps {
   title: string;

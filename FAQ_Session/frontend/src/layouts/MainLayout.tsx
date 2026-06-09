@@ -66,7 +66,7 @@ export const MainLayout: React.FC = () => {
       {/* Floating Yaksha AI Chatbot Widget */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         {isChatOpen && (
-          <div className="w-96 max-w-[calc(100vw-2rem)] border border-slate-200 bg-white shadow-2xl z-50 flex flex-col rounded-2xl mb-4 overflow-hidden">
+          <div className="w-96 max-w-[calc(100vw-2rem)] border border-slate-200 bg-white shadow-2xl z-50 flex flex-col rounded-2xl mb-4 overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {/* Header */}
             <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
               <div className="font-semibold text-sm text-slate-800 flex items-center gap-2">
@@ -85,7 +85,7 @@ export const MainLayout: React.FC = () => {
             </div>
 
             {/* Scrollable Message Box */}
-            <div className="flex-1 h-[320px] overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-thin">
+            <div className="flex-1 min-h-[220px] max-h-[380px] overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-thin">
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                   <span className="text-[10px] font-semibold text-slate-400 mb-1">

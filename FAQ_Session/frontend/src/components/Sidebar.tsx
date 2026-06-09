@@ -5,17 +5,10 @@ import {
   Home, 
   HelpCircle, 
   MessageSquare, 
-  TrendingUp, 
-  Bookmark, 
   User, 
-  Bell, 
-  ShieldAlert, 
-  Layers,
-  Sparkles,
-  BookOpen
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useMockDb } from '../context/MockDbContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,25 +17,11 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { currentUser } = useAuth();
-  const { notifications } = useMockDb();
-  
-  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   const menuItems = [
     { name: 'Home', path: '/', icon: Home, color: 'bg-brand-yellow' },
     { name: 'FAQs', path: '/faqs', icon: HelpCircle, color: 'bg-brand-green' },
     { name: 'Questions', path: '/questions', icon: MessageSquare, color: 'bg-brand-blue' },
-    { name: 'Trending', path: '/trending', icon: TrendingUp, color: 'bg-brand-pink' },
-    { name: 'Categories', path: '/categories', icon: Layers, color: 'bg-brand-purple' },
-    { name: 'Bookmarks', path: '/bookmarks', icon: Bookmark, color: 'bg-brand-orange' },
-    { name: 'My Questions', path: '/my-questions', icon: BookOpen, color: 'bg-brand-yellow' },
-    { 
-      name: 'Notifications', 
-      path: '/notifications', 
-      icon: Bell, 
-      color: 'bg-brand-pink',
-      badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined 
-    },
     { name: 'Profile', path: '/profile', icon: User, color: 'bg-brand-green' },
   ];
 
@@ -98,11 +77,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               <span className="flex-1 font-sans text-sm">{item.name}</span>
-              {item.badge !== undefined && (
-                <span className="flex items-center justify-center min-w-[20px] h-[20px] px-1 text-[10px] font-semibold bg-blue-600 text-white rounded-full">
-                  {item.badge}
-                </span>
-              )}
             </NavLink>
           ))}
 
