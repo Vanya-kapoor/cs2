@@ -4,9 +4,16 @@ import { toNodeHandler } from 'better-auth/node';
 import { BaseController } from '../../core/base/BaseController';
 import { getAuth } from '../../config/auth';
 import { requireAuth } from '../../core/middleware/auth.middleware';
+import { validate } from '../../core/middleware/validate.middleware';
 import { asyncHandler } from '../../core/utils/asyncHandler';
 import { sendSuccess } from '../../core/utils/response';
 import { Messages } from '../../core/constants/messages';
+import {
+  signUpSchema,
+  signInSchema,
+  resetPasswordSchema,
+  forgotPasswordSchema,
+} from './auth.schema';
 
 /**
  * ── Email / password ──────────────────────────────────────────────────
@@ -17,7 +24,7 @@ import { Messages } from '../../core/constants/messages';
  *
  * ── Forgot / reset password ───────────────────────────────────────────
  *   POST /api/auth/request-password-reset      body: { email, redirectTo }
- *   POST /api/auth/reset-password       body: { newPassword, token }
+ *   POST /api/auth/reset-password              body: { newPassword, token }
  *
  * ── Google OAuth ──────────────────────────────────────────────────────
  *   POST /api/auth/sign-in/social       body: { provider: "google", callbackURL }
@@ -39,7 +46,35 @@ export class AuthController extends BaseController {
   }
 
   protected registerRoutes(): void {
+    // Custom route
     this.router.get('/me', requireAuth, asyncHandler(this.me.bind(this)));
+
+    // Zod-validated routes — validation runs first, then better-auth handles the request
+    this.router.post(
+      '/sign-up/email',
+      validate(signUpSchema),
+      this.betterAuthHandler,
+    );
+
+    this.router.post(
+      '/sign-in/email',
+      validate(signInSchema),
+      this.betterAuthHandler,
+    );
+
+    this.router.post(
+      '/reset-password',
+      validate(resetPasswordSchema),
+      this.betterAuthHandler,
+    );
+
+    this.router.post(
+      '/request-password-reset',
+      validate(forgotPasswordSchema),
+      this.betterAuthHandler,
+    );
+
+    // Fallback: all other auth routes (OAuth, session, sign-out, etc.)
     this.router.all('*', this.betterAuthHandler);
   }
 
