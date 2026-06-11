@@ -1,32 +1,26 @@
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
-import { ValidationError } from '../errors';
-
-type ValidateTarget = 'body' | 'query' | 'params';
 
 /**
- * Validates req[target] against a Zod schema.
- * Throws a ValidationError (422) with field-level details on failure.
+ * Zod validation middleware.
+ * Validates req.body against the given schema.
+ * On failure, returns 400 with field-level errors.
+ * On success, replaces req.body with the parsed (sanitized) data.
  */
-export const validate =
-  (schema: ZodSchema, target: ValidateTarget = 'body'): RequestHandler =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (req: Request, _res: Response, next: NextFunction): void => {
-    try {
-      const parsed = schema.parse(req[target]);
-      // Replace with the coerced/parsed value
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (req as any)[target] = parsed;
-      next();
-    } catch (err) {
-      if (err instanceof ZodError) {
-        const details = err.errors.map((e) => ({
-          field: e.path.join('.'),
-          message: e.message,
-        }));
-        next(new ValidationError('Validation failed', details));
-      } else {
-        next(err);
-      }
+export const validate = (schema: ZodSchema) =>
+  (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.body);
+
+    if (!result.success) {
+      const errors = (result.error as ZodError).flatten().fieldErrors;
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors,
+      });
+      return;
     }
+
+    req.body = result.data;
+    next();
   };

@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../context/AuthContext';
+import {
+  signInSchema,
+  signUpSchema,
+  forgotPasswordSchema,
+  SignInFormData,
+  SignUpFormData,
+  ForgotPasswordFormData,
+} from '../utils/authSchemas';
 
 type View = 'signin' | 'signup' | 'forgot' | 'forgot-success';
 
@@ -14,93 +24,91 @@ const GoogleIcon = () => (
   </svg>
 );
 
+/* ── Shared field error message ── */
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+  message ? <p className="text-xs text-red-500 mt-1 pl-1">{message}</p> : null;
+
 export const LoginModal: React.FC = () => {
   const { isLoginModalOpen, closeLoginModal, signIn, signUp, signInWithGoogle, forgotPassword } = useAuth();
 
   const [view, setView] = useState<View>('signin');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [apiError, setApiError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState(''); // keep for success screen
+
+  /* ── Forms ── */
+  const signInForm = useForm<SignInFormData>({ resolver: zodResolver(signInSchema) });
+  const signUpForm = useForm<SignUpFormData>({ resolver: zodResolver(signUpSchema) });
+  const forgotForm = useForm<ForgotPasswordFormData>({ resolver: zodResolver(forgotPasswordSchema) });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const resetForm = () => {
-    setName(''); setEmail(''); setPassword('');
-    setConfirmPassword(''); setError('');
-    setShowPassword(false); setShowConfirmPassword(false);
-  };
 
   const handleClose = () => {
-    resetForm();
+    signInForm.reset();
+    signUpForm.reset();
+    forgotForm.reset();
+    setApiError('');
     setView('signin');
     closeLoginModal();
   };
 
   const switchView = (v: View) => {
-    resetForm();
+    signInForm.reset();
+    signUpForm.reset();
+    forgotForm.reset();
+    setApiError('');
     setView(v);
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
-    setLoading(true); setError('');
+  /* ── Submit handlers ── */
+  const handleSignIn = signInForm.handleSubmit(async (data) => {
+    setApiError('');
     try {
-      await signIn(email, password);
+      await signIn(data.email, data.password);
       handleClose();
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Invalid email or password.');
-    } finally {
-      setLoading(false);
+      setApiError(err?.response?.data?.message || err?.message || 'Invalid email or password.');
     }
-  };
+  });
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !password || !confirmPassword) { setError('Please fill in all fields.'); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
-    setLoading(true); setError('');
+  const handleSignUp = signUpForm.handleSubmit(async (data) => {
+    setApiError('');
     try {
-      await signUp(name, email, password);
+      await signUp(data.name, data.email, data.password);
       handleClose();
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Sign up failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setApiError(err?.response?.data?.message || err?.message || 'Sign up failed. Please try again.');
     }
-  };
+  });
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) { setError('Please enter your email address.'); return; }
-    setLoading(true); setError('');
+  const handleForgotPassword = forgotForm.handleSubmit(async (data) => {
+    setApiError('');
     try {
-      await forgotPassword(email);
+      await forgotPassword(data.email);
+      setForgotEmail(data.email);
       setView('forgot-success');
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to send reset email. Try again.');
-    } finally {
-      setLoading(false);
+      setApiError(err?.response?.data?.message || err?.message || 'Failed to send reset email. Try again.');
     }
-  };
+  });
 
   const handleGoogleSignIn = async () => {
-    setGoogleLoading(true); setError('');
+    setGoogleLoading(true);
+    setApiError('');
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      setError(err?.message || 'Google sign-in failed.');
+      setApiError(err?.message || 'Google sign-in failed.');
       setGoogleLoading(false);
     }
   };
 
   const inputBase =
     'w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
+
+  const inputError =
+    'border-red-300 focus:ring-red-500/30 focus:border-red-400';
 
   return (
     <AnimatePresence>
@@ -145,7 +153,7 @@ export const LoginModal: React.FC = () => {
                     <p className="text-xs text-slate-500 mt-0.5">Sign in to your Yaksha account</p>
                   </div>
 
-                  {/* Google Button */}
+                  {/* Google */}
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading}
@@ -161,35 +169,42 @@ export const LoginModal: React.FC = () => {
                     <div className="flex-1 h-px bg-slate-100" />
                   </div>
 
-                  <form onSubmit={handleSignIn} className="space-y-3">
-                    <div className="relative">
-                      <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputBase}
-                        autoComplete="email"
-                      />
+                  <form onSubmit={handleSignIn} className="space-y-3" noValidate>
+                    {/* Email */}
+                    <div>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="email"
+                          placeholder="Email address"
+                          {...signInForm.register('email')}
+                          className={`${inputBase} ${signInForm.formState.errors.email ? inputError : ''}`}
+                          autoComplete="email"
+                        />
+                      </div>
+                      <FieldError message={signInForm.formState.errors.email?.message} />
                     </div>
-                    <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className={`${inputBase} pr-9`}
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
+
+                    {/* Password */}
+                    <div>
+                      <div className="relative">
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          {...signInForm.register('password')}
+                          className={`${inputBase} pr-9 ${signInForm.formState.errors.password ? inputError : ''}`}
+                          autoComplete="current-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <FieldError message={signInForm.formState.errors.password?.message} />
                     </div>
 
                     <div className="flex justify-end">
@@ -202,16 +217,18 @@ export const LoginModal: React.FC = () => {
                       </button>
                     </div>
 
-                    {error && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+                    {apiError && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{apiError}</p>
                     )}
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={signInForm.formState.isSubmitting}
                       className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                     >
-                      {loading ? <><Loader2 size={15} className="animate-spin" /> Signing in...</> : 'Sign In'}
+                      {signInForm.formState.isSubmitting
+                        ? <><Loader2 size={15} className="animate-spin" /> Signing in...</>
+                        : 'Sign In'}
                     </button>
                   </form>
 
@@ -233,7 +250,7 @@ export const LoginModal: React.FC = () => {
                     <p className="text-xs text-slate-500 mt-0.5">Join Yaksha and start collaborating</p>
                   </div>
 
-                  {/* Google Button */}
+                  {/* Google */}
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading}
@@ -249,76 +266,93 @@ export const LoginModal: React.FC = () => {
                     <div className="flex-1 h-px bg-slate-100" />
                   </div>
 
-                  <form onSubmit={handleSignUp} className="space-y-3">
-                    <div className="relative">
-                      <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className={inputBase}
-                        autoComplete="name"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputBase}
-                        autoComplete="email"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Password (min 6 characters)"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className={`${inputBase} pr-9`}
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder="Confirm password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`${inputBase} pr-9`}
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
+                  <form onSubmit={handleSignUp} className="space-y-3" noValidate>
+                    {/* Name */}
+                    <div>
+                      <div className="relative">
+                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Full name"
+                          {...signUpForm.register('name')}
+                          className={`${inputBase} ${signUpForm.formState.errors.name ? inputError : ''}`}
+                          autoComplete="name"
+                        />
+                      </div>
+                      <FieldError message={signUpForm.formState.errors.name?.message} />
                     </div>
 
-                    {error && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+                    {/* Email */}
+                    <div>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="email"
+                          placeholder="Email address"
+                          {...signUpForm.register('email')}
+                          className={`${inputBase} ${signUpForm.formState.errors.email ? inputError : ''}`}
+                          autoComplete="email"
+                        />
+                      </div>
+                      <FieldError message={signUpForm.formState.errors.email?.message} />
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <div className="relative">
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password (min 6 characters)"
+                          {...signUpForm.register('password')}
+                          className={`${inputBase} pr-9 ${signUpForm.formState.errors.password ? inputError : ''}`}
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <FieldError message={signUpForm.formState.errors.password?.message} />
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div>
+                      <div className="relative">
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Confirm password"
+                          {...signUpForm.register('confirmPassword')}
+                          className={`${inputBase} pr-9 ${signUpForm.formState.errors.confirmPassword ? inputError : ''}`}
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <FieldError message={signUpForm.formState.errors.confirmPassword?.message} />
+                    </div>
+
+                    {apiError && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{apiError}</p>
                     )}
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={signUpForm.formState.isSubmitting}
                       className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                     >
-                      {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account...</> : 'Create Account'}
+                      {signUpForm.formState.isSubmitting
+                        ? <><Loader2 size={15} className="animate-spin" /> Creating account...</>
+                        : 'Create Account'}
                     </button>
                   </form>
 
@@ -349,29 +383,33 @@ export const LoginModal: React.FC = () => {
                     </p>
                   </div>
 
-                  <form onSubmit={handleForgotPassword} className="space-y-3">
-                    <div className="relative">
-                      <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputBase}
-                        autoComplete="email"
-                      />
+                  <form onSubmit={handleForgotPassword} className="space-y-3" noValidate>
+                    <div>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="email"
+                          placeholder="Email address"
+                          {...forgotForm.register('email')}
+                          className={`${inputBase} ${forgotForm.formState.errors.email ? inputError : ''}`}
+                          autoComplete="email"
+                        />
+                      </div>
+                      <FieldError message={forgotForm.formState.errors.email?.message} />
                     </div>
 
-                    {error && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+                    {apiError && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{apiError}</p>
                     )}
 
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={forgotForm.formState.isSubmitting}
                       className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                     >
-                      {loading ? <><Loader2 size={15} className="animate-spin" /> Sending...</> : 'Send Reset Link'}
+                      {forgotForm.formState.isSubmitting
+                        ? <><Loader2 size={15} className="animate-spin" /> Sending...</>
+                        : 'Send Reset Link'}
                     </button>
                   </form>
                 </>
@@ -387,7 +425,7 @@ export const LoginModal: React.FC = () => {
                   <p className="text-xs text-slate-500 leading-relaxed mb-1">
                     We've sent a password reset link to
                   </p>
-                  <p className="text-sm font-semibold text-slate-700 mb-5">{email}</p>
+                  <p className="text-sm font-semibold text-slate-700 mb-5">{forgotEmail}</p>
                   <p className="text-[11px] text-slate-400 mb-6">
                     The link expires in 1 hour. Check your spam folder if you don't see it.
                   </p>

@@ -15,6 +15,9 @@ export const AskQuestion: React.FC = () => {
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [similarQuestions, setSimilarQuestions] = useState<Question[]>([]);
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   // Dynamic "Similar Questions" check
   useEffect(() => {
@@ -28,17 +31,61 @@ export const AskQuestion: React.FC = () => {
     }
   }, [title, questions]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validate = (): boolean => {
+    let valid = true;
+    setTitleError('');
+    setDescriptionError('');
+
+    if (!title.trim()) {
+      setTitleError('Question title is required.');
+      valid = false;
+    } else if (title.trim().length < 5) {
+      setTitleError('Title must be at least 5 characters.');
+      valid = false;
+    } else if (title.trim().length > 200) {
+      setTitleError('Title must be at most 200 characters.');
+      valid = false;
+    }
+
+    if (!description.trim()) {
+      setDescriptionError('Please provide some context for your question.');
+      valid = false;
+    } else if (description.trim().length < 10) {
+      setDescriptionError('Description must be at least 10 characters.');
+      valid = false;
+    }
+
+    return valid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
+
     if (!currentUser) {
       openLoginModal();
       return;
     }
-    if (!title.trim() || !description.trim()) return;
 
-    askQuestion(title.trim(), description.trim());
-    navigate('/questions');
+    if (!validate()) return;
+
+    try {
+      await askQuestion(title.trim(), description.trim());
+      navigate('/questions');
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.title?.[0] ||
+        err?.response?.data?.errors?.description?.[0] ||
+        err?.message ||
+        'Failed to submit question. Please try again.';
+      setSubmitError(msg);
+    }
   };
+
+  const inputBase =
+    'w-full p-3 border rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all';
+  const inputErrorClass = 'border-red-300 focus:border-red-400 focus:ring-red-400';
 
   return (
     <motion.div
@@ -73,7 +120,7 @@ export const AskQuestion: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Question Title */}
           <div className="relative space-y-1.5">
             <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
@@ -84,10 +131,12 @@ export const AskQuestion: React.FC = () => {
               type="text"
               placeholder="Be specific. e.g., 'What bank accounts are accepted for SalaryHub disbursement?'"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              required
+              onChange={(e) => { setTitle(e.target.value); setTitleError(''); }}
+              className={`${inputBase} ${titleError ? inputErrorClass : 'border-slate-200'}`}
             />
+            {titleError && (
+              <p className="text-xs text-red-500 pl-1">{titleError}</p>
+            )}
 
             {/* Similar Questions Dropdown */}
             <AnimatePresence>
@@ -134,10 +183,12 @@ export const AskQuestion: React.FC = () => {
               rows={5}
               placeholder="Explain the background. List what you have tried, relevant dates, team roles, or HR policies."
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              required
+              onChange={(e) => { setDescription(e.target.value); setDescriptionError(''); }}
+              className={`${inputBase} ${descriptionError ? inputErrorClass : 'border-slate-200'}`}
             />
+            {descriptionError && (
+              <p className="text-xs text-red-500 pl-1">{descriptionError}</p>
+            )}
           </div>
 
           {/* Tags */}
@@ -148,12 +199,20 @@ export const AskQuestion: React.FC = () => {
               placeholder="e.g. stipend, onboarding, finance, sbi-bank"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              className={`${inputBase} border-slate-200`}
             />
             <p className="text-[10px] text-slate-400 font-medium leading-none pl-1 mt-1">
               Add up to 5 keywords to help others find this question.
             </p>
           </div>
+
+          {/* API-level error */}
+          {submitError && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+              <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-red-600">{submitError}</p>
+            </div>
+          )}
 
           {/* Submit Action */}
           <div className="pt-3">

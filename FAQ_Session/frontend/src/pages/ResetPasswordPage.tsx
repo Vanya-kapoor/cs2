@@ -1,53 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { apiService } from '../utils/api';
+import { resetPasswordSchema, ResetPasswordFormData } from '../utils/authSchemas';
+
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+  message ? <p className="text-xs text-red-500 mt-1 pl-1">{message}</p> : null;
 
 const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token') || '';
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isSubmitSuccessful },
+    setError,
+    watch,
+  } = useForm<ResetPasswordFormData>({ resolver: zodResolver(resetPasswordSchema) });
+
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [apiError, setApiError] = React.useState('');
 
   useEffect(() => {
     if (!token) {
-      setError('Invalid or missing reset token. Please request a new password reset.');
+      setApiError('Invalid or missing reset token. Please request a new password reset.');
     }
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password || !confirmPassword) { setError('Please fill in all fields.'); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
-
-    setLoading(true); setError('');
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    setApiError('');
     try {
-      await apiService.resetPassword(password, token);
-      setSuccess(true);
+      await apiService.resetPassword(data.password, token);
+      // isSubmitSuccessful will become true automatically
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to reset password. The link may have expired.');
-    } finally {
-      setLoading(false);
+      setApiError(
+        err?.response?.data?.message || err?.message || 'Failed to reset password. The link may have expired.',
+      );
     }
   };
 
   const inputBase =
     'w-full pl-9 pr-9 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
 
+  const inputErrorClass = 'border-red-300 focus:ring-red-500/30 focus:border-red-400';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
         <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
         <div className="p-6">
-          {success ? (
+          {isSubmitSuccessful && !apiError ? (
             <div className="text-center py-4">
               <div className="flex items-center justify-center w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-full mx-auto mb-4">
                 <CheckCircle size={28} className="text-emerald-500" />
@@ -74,57 +81,64 @@ const ResetPasswordPage: React.FC = () => {
               {!token ? (
                 <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg">
                   <AlertCircle size={15} className="text-red-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-red-600">{error}</p>
+                  <p className="text-xs text-red-600">{apiError}</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="relative">
-                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="New password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={inputBase}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={inputBase}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+                  {/* New Password */}
+                  <div>
+                    <div className="relative">
+                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="New password"
+                        {...register('password')}
+                        className={`${inputBase} ${errors.password ? inputErrorClass : ''}`}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    <FieldError message={errors.password?.message} />
                   </div>
 
-                  {error && (
-                    <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+                  {/* Confirm Password */}
+                  <div>
+                    <div className="relative">
+                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm new password"
+                        {...register('confirmPassword')}
+                        className={`${inputBase} ${errors.confirmPassword ? inputErrorClass : ''}`}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    <FieldError message={errors.confirmPassword?.message} />
+                  </div>
+
+                  {apiError && (
+                    <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{apiError}</p>
                   )}
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                   >
-                    {loading ? <><Loader2 size={15} className="animate-spin" /> Updating...</> : 'Update Password'}
+                    {isSubmitting ? <><Loader2 size={15} className="animate-spin" /> Updating...</> : 'Update Password'}
                   </button>
                 </form>
               )}
