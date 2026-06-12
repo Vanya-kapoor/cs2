@@ -8,6 +8,7 @@ import { QueryController } from './modules/query/query.controller';
 import { ReplyController } from './modules/reply/reply.controller';
 import { ChatController } from './modules/chat/chat.controller';
 import badgeRoutes from './modules/badge/badge.routes';
+import notificationRoutes from './modules/notification/notification.routes';
 import { errorMiddleware } from './core/middleware/error.middleware';
 import { notFoundMiddleware } from './core/middleware/notFound.middleware';
 import { logger } from './core/utils/logger';
@@ -77,6 +78,7 @@ const createApp = (): Application => {
 
   app.use('/api/chat', chatController.router);
   app.use('/api/badges', badgeRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   // ─── 404 & Error Handlers ─────────────────────────────────────────────
   app.use(notFoundMiddleware);

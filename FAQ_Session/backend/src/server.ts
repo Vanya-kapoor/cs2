@@ -2,6 +2,7 @@ import { connectDB } from './config/db';
 import createApp from './app';
 import { env } from './config/env';
 import { logger } from './core/utils/logger';
+import { initSocket } from './core/socket/socket';
 
 const startServer = async (): Promise<void> => {
   // Connect to database first
@@ -12,6 +13,9 @@ const startServer = async (): Promise<void> => {
   const server = app.listen(env.PORT, () => {
     logger.info(` Server running on port ${env.PORT} [${env.NODE_ENV}]`);
   });
+
+  // Initialize Socket.IO
+  initSocket(server);
 
   // ─── Graceful Shutdown ────────────────────────────────────────────────
   const shutdown = (signal: string) => {

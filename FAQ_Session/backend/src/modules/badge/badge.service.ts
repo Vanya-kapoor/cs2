@@ -7,6 +7,8 @@ import { QueryRepository } from '../query/query.repository';
 import { BadgeCategory, IBadge } from './badge.interface';
 import { UserModel } from '../user/user.model';
 import { ReplyModel } from '../reply/reply.model';
+import { NotificationService } from '../notification/notification.service';
+
 
 export class BadgeService extends BaseService {
   constructor(
@@ -38,6 +40,15 @@ export class BadgeService extends BaseService {
     for (const badge of badges) {
       if (currentCount >= badge.criteria && !userBadgeIds.includes(badge._id.toString())) {
         await this.userRepo.addBadgeToUser(userId, badge._id.toString());
+        
+        const notificationService = new NotificationService();
+        notificationService.createNotification({
+          userId,
+          title: 'New Badge Earned!',
+          message: `Congratulations! You earned the "${badge.name}" badge.`,
+          type: 'BADGE',
+          link: '/profile/badges'
+        }).catch(console.error);
       }
     }
   }
