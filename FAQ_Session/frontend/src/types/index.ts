@@ -14,6 +14,8 @@ export interface User {
   avatar: string;
   stats: UserStats;
   badges: string[];
+  warnings?: number;
+  reputationPenalty?: number;
 }
 
 export interface Answer {
@@ -39,4 +41,8 @@ export interface Question {
   createdAt: string;
   author: User;
   answers: Answer[];
+  reportCount?: number;
+  isReported?: boolean;
+  needsAdminReview?: boolean;
+  isHidden?: boolean;
 }

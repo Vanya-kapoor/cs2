@@ -123,8 +123,14 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
       avatar: query.createdBy?.image || '🧑‍💻',
       stats: { questionsAsked: 0, answersPosted: 0, upvotesReceived: 0, reputation: 0 },
       badges: [],
+      warnings: query.createdBy?.warnings || 0,
+      reputationPenalty: query.createdBy?.reputationPenalty || 0,
     },
     answers: mappedAnswers,
+    reportCount: query.reportCount || 0,
+    isReported: query.isReported || false,
+    needsAdminReview: query.needsAdminReview || false,
+    isHidden: query.isHidden || false,
   };
 };
 
@@ -299,12 +305,34 @@ export const apiService = {
           questionsAsked: statsData.totalQueries,
           answersPosted: statsData.totalReplies,
           upvotesReceived: statsData.approvedReplies,
-          reputation: statsData.approvedReplies * 15 + statsData.totalQueries * 10,
+          reputation: Math.max(0, statsData.approvedReplies * 15 + statsData.totalQueries * 10 - (dbUser.reputationPenalty || 0)),
         },
         badges: badgeNames,
+        warnings: dbUser.warnings || 0,
+        reputationPenalty: dbUser.reputationPenalty || 0,
       };
     } catch {
       return null;
     }
+  },
+  // --- Moderation/Reporting ---
+  async reportQuery(queryId: string, reason: string): Promise<void> {
+    await apiClient.post(`/queries/${queryId}/report`, { reason });
+  },
+  async getReportedQueries(): Promise<Question[]> {
+    const response = await apiClient.get<ApiResponse<any[]>>('/admin/reported-queries');
+    return (response.data.data || []).map((q: any) => mapQueryToQuestion(q, []));
+  },
+  async ignoreQuery(queryId: string): Promise<void> {
+    await apiClient.post(`/admin/reported-queries/${queryId}/ignore`);
+  },
+  async warnQuery(queryId: string): Promise<void> {
+    await apiClient.post(`/admin/reported-queries/${queryId}/warn`);
+  },
+  async penalizeQuery(queryId: string): Promise<void> {
+    await apiClient.post(`/admin/reported-queries/${queryId}/penalize`);
+  },
+  async deleteReportedQuery(queryId: string): Promise<void> {
+    await apiClient.delete(`/admin/reported-queries/${queryId}`);
   },
 };

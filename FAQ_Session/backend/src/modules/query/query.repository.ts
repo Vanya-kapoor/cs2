@@ -10,7 +10,9 @@ export class QueryRepository extends BaseRepository<IQuery> {
 
   async findPaginated(skip: number, limit: number, status?: QueryStatus): Promise<IQuery[]> {
     try {
-      const filter = status ? { status } : {};
+      const filter: Record<string, any> = status
+        ? { status, isHidden: { $ne: true } }
+        : { isHidden: { $ne: true } };
       return await QueryModel.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -23,7 +25,9 @@ export class QueryRepository extends BaseRepository<IQuery> {
 
   async countByStatus(status?: QueryStatus): Promise<number> {
     try {
-      const filter = status ? { status } : {};
+      const filter: Record<string, any> = status
+        ? { status, isHidden: { $ne: true } }
+        : { isHidden: { $ne: true } };
       return await QueryModel.countDocuments(filter).exec();
     } catch (err) {
       throw new DatabaseError(`Failed to count queries: ${(err as Error).message}`);
@@ -55,6 +59,17 @@ export class QueryRepository extends BaseRepository<IQuery> {
       return await QueryModel.countDocuments({ createdBy: userId, status: 'resolved' }).exec();
     } catch (err) {
       throw new DatabaseError(`Failed to count resolved queries for user: ${(err as Error).message}`);
+    }
+  }
+
+  async findReported(): Promise<IQuery[]> {
+    try {
+      return await QueryModel.find({ needsAdminReview: true })
+        .populate('createdBy', 'name email image')
+        .sort({ updatedAt: -1 })
+        .exec();
+    } catch (err) {
+      throw new DatabaseError(`Failed to fetch reported queries: ${(err as Error).message}`);
     }
   }
 }

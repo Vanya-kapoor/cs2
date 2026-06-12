@@ -8,21 +8,41 @@ export class FaqRepository extends BaseRepository<IFaq> {
     super(FaqModel);
   }
 
+  /**
+   * 🔥 Get ALL FAQs (no limit, no sort, no skip)
+   */
+  async findAll(): Promise<IFaq[]> {
+    try {
+      return await FaqModel.find()
+        .select('question answer createdBy approvedBy sourceQueryId createdAt')
+        .populate('createdBy', 'name email')
+        .populate('approvedBy', 'name email')
+        .lean(); // faster, returns plain JS objects
+    } catch (err) {
+      throw new DatabaseError(`Failed to fetch all FAQs: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * (Optional) Keep paginated version if needed later
+   */
   async findPaginated(skip: number, limit: number): Promise<IFaq[]> {
     try {
       return await FaqModel.find()
         .select('question answer createdBy approvedBy sourceQueryId createdAt')
         .populate('createdBy', 'name email')
         .populate('approvedBy', 'name email')
-        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .exec();
+        .lean();
     } catch (err) {
       throw new DatabaseError(`Failed to paginate FAQs: ${(err as Error).message}`);
     }
   }
 
+  /**
+   * 🔍 Vector search (unchanged)
+   */
   async vectorSearch(queryEmbedding: number[]): Promise<IVectorSearchResult[]> {
     try {
       return await FaqModel.aggregate<IVectorSearchResult>([

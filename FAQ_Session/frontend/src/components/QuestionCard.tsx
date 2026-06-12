@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { MessageSquare } from 'lucide-react';
 import { Question } from '../types';
 import { StatusBadge } from './CommonWidgets';
+import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 
 interface QuestionCardProps {
   question: Question;
@@ -12,6 +14,29 @@ interface QuestionCardProps {
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({ question, index }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { reportQuery } = useAppContext();
+  const [isReportedState, setIsReportedState] = React.useState(false);
+
+  const reportKey = currentUser ? `reported_query_${currentUser.id}_${question.id}` : '';
+  const isAlreadyReported = isReportedState || (currentUser ? !!localStorage.getItem(reportKey) : false);
+
+  const handleReportClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent navigating to details page
+    if (!currentUser) return;
+    
+    const reason = window.prompt("Please enter a reason for reporting this query:");
+    if (!reason || !reason.trim()) return;
+
+    try {
+      await reportQuery(question.id, reason.trim());
+      localStorage.setItem(reportKey, 'true');
+      setIsReportedState(true);
+      alert("Query reported successfully");
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || "Failed to report query");
+    }
+  };
 
   return (
     <motion.div
@@ -70,6 +95,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({ question, index }) =
             )}
           </div>
         </div>
+
+        {currentUser && currentUser.id !== question.author.id && (
+          <button
+            onClick={handleReportClick}
+            disabled={isAlreadyReported}
+            className={`mt-2 text-[9px] font-semibold uppercase tracking-wider px-2 py-1 border rounded transition-colors ${
+              isAlreadyReported
+                ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-white border-rose-200 hover:bg-rose-50 text-rose-600 hover:border-rose-300 cursor-pointer'
+            }`}
+          >
+            {isAlreadyReported ? 'Reported 🚩' : 'Report 🏳️'}
+          </button>
+        )}
       </div>
     </motion.div>
   );

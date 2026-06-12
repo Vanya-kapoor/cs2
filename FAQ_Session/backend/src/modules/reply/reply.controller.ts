@@ -6,6 +6,7 @@ import { ReplyRepository } from "./reply.repository";
 import { QueryRepository } from "../query/query.repository";
 import { FaqRepository } from "../faq/faq.repository";
 import { EmbeddingService } from "../faq/embedding.service";
+import { QueryService } from "../query/query.service";
 import { asyncHandler } from "../../core/utils/asyncHandler";
 import { validate } from "../../core/middleware/validate.middleware";
 import {
@@ -19,6 +20,7 @@ import { CreateReplyDto } from "./reply.dto";
 
 export class ReplyController extends BaseController {
   private readonly replyService: ReplyService;
+  private readonly queryService: QueryService;
 
   constructor() {
     super();
@@ -28,6 +30,7 @@ export class ReplyController extends BaseController {
       new FaqRepository(),
       new EmbeddingService(),
     );
+    this.queryService = new QueryService(new QueryRepository());
     this.registerRoutes();
   }
 
@@ -62,6 +65,46 @@ export class ReplyController extends BaseController {
       requireAuth,
       asyncHandler(this.deleteReply.bind(this)),
     );
+
+    // Admin – list reported queries
+    this.router.get(
+      "/admin/reported-queries",
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.getReportedQueries.bind(this)),
+    );
+
+    // Admin – ignore reports on a query
+    this.router.post(
+      "/admin/reported-queries/:id/ignore",
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.ignoreReportedQuery.bind(this)),
+    );
+
+    // Admin – warn creator of query
+    this.router.post(
+      "/admin/reported-queries/:id/warn",
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.warnReportedQuery.bind(this)),
+    );
+
+    // Admin – penalize creator of query
+    this.router.post(
+      "/admin/reported-queries/:id/penalize",
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.penalizeReportedQuery.bind(this)),
+    );
+
+    // Admin – delete reported query
+    this.router.delete(
+      "/admin/reported-queries/:id",
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.deleteReportedQuery.bind(this)),
+    );
   }
 
   private async addReply(req: Request, res: Response): Promise<void> {
@@ -90,4 +133,33 @@ export class ReplyController extends BaseController {
   await this.replyService.deleteReply(replyId, userId, userRole);
   sendSuccess(res, null, 'Reply deleted successfully');
 }
+
+  private async getReportedQueries(req: Request, res: Response): Promise<void> {
+    const queries = await this.queryService.getReportedQueries();
+    sendSuccess(res, queries, Messages.SUCCESS);
+  }
+
+  private async ignoreReportedQuery(req: Request, res: Response): Promise<void> {
+    const queryId = String(req.params['id']);
+    await this.queryService.ignoreReports(queryId);
+    sendSuccess(res, null, 'Reports ignored successfully');
+  }
+
+  private async warnReportedQuery(req: Request, res: Response): Promise<void> {
+    const queryId = String(req.params['id']);
+    await this.queryService.warnCreator(queryId);
+    sendSuccess(res, null, 'Creator warned and query hidden successfully');
+  }
+
+  private async penalizeReportedQuery(req: Request, res: Response): Promise<void> {
+    const queryId = String(req.params['id']);
+    await this.queryService.penalizeCreator(queryId);
+    sendSuccess(res, null, 'Creator penalized and query hidden successfully');
+  }
+
+  private async deleteReportedQuery(req: Request, res: Response): Promise<void> {
+    const queryId = String(req.params['id']);
+    await this.queryService.deleteQuery(queryId);
+    sendSuccess(res, null, 'Reported query deleted successfully');
+  }
 }

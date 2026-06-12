@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Question, Answer, QuestionStatus } from '../types';
+import { Question, QuestionStatus } from '../types';
 import { useAuth } from './AuthContext';
 import { apiService } from '../utils/api';
 
@@ -18,6 +18,12 @@ interface AppContextType {
     openQuestions: number;
     answeredQuestions: number;
   };
+  reportQuery: (queryId: string, reason: string) => Promise<void>;
+  getReportedQueries: () => Promise<Question[]>;
+  ignoreQuery: (queryId: string) => Promise<void>;
+  warnQuery: (queryId: string) => Promise<void>;
+  penalizeQuery: (queryId: string) => Promise<void>;
+  deleteReportedQuery: (queryId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -172,6 +178,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return { totalFAQs, openQuestions, answeredQuestions };
   };
 
+  const reportQuery = async (queryId: string, reason: string) => {
+    await apiService.reportQuery(queryId, reason);
+  };
+
+  const getReportedQueries = async (): Promise<Question[]> => {
+    return await apiService.getReportedQueries();
+  };
+
+  const ignoreQuery = async (queryId: string) => {
+    await apiService.ignoreQuery(queryId);
+    await refreshData();
+  };
+
+  const warnQuery = async (queryId: string) => {
+    await apiService.warnQuery(queryId);
+    await refreshData();
+  };
+
+  const penalizeQuery = async (queryId: string) => {
+    await apiService.penalizeQuery(queryId);
+    await refreshData();
+  };
+
+  const deleteReportedQuery = async (queryId: string) => {
+    await apiService.deleteReportedQuery(queryId);
+    await refreshData();
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -185,6 +219,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteReply,
         refreshData,
         getStats,
+        reportQuery,
+        getReportedQueries,
+        ignoreQuery,
+        warnQuery,
+        penalizeQuery,
+        deleteReportedQuery,
       }}
     >
       {children}

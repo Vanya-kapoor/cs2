@@ -10,33 +10,41 @@ export const FAQPage: React.FC = () => {
   const { questions } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get('search') || ''
+  );
 
   useEffect(() => {
-    const qSearch = searchParams.get('search') || '';
-    setSearchQuery(qSearch);
+    setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
+
     const newParams = new URLSearchParams(searchParams);
-    if (query) {
-      newParams.set('search', query);
-    } else {
-      newParams.delete('search');
-    }
+    if (query) newParams.set('search', query);
+    else newParams.delete('search');
+
     setSearchParams(newParams);
   };
 
+  // 🔥 CORE FIX: Only show verified FAQs
   const faqs = questions
+    .filter(q => q.isOfficial) // ✅ ONLY FAQs
     .filter(q => {
-      const matchesSearch =
-        q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesSearch;
+      const search = searchQuery.toLowerCase();
+
+      return (
+        q.title.toLowerCase().includes(search) ||
+        q.description.toLowerCase().includes(search) ||
+        q.tags.some(t => t.toLowerCase().includes(search))
+      );
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
 
   return (
     <motion.div
@@ -46,14 +54,14 @@ export const FAQPage: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="space-y-6"
     >
-      {/* Header Info */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 font-sans">
             Verified FAQs
           </h1>
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
-            Browse official responses and resolved queries
+            Browse official verified FAQs
           </p>
         </div>
       </div>
@@ -67,7 +75,7 @@ export const FAQPage: React.FC = () => {
         />
       </div>
 
-      {/* Grid of cards */}
+      {/* FAQs Grid */}
       {faqs.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
           {faqs.map((faq, idx) => (
@@ -76,11 +84,12 @@ export const FAQPage: React.FC = () => {
         </div>
       ) : (
         <EmptyState
-          title="No FAQs match your search"
-          description="Try typing a different keyword or clear the search to explore all resolved intern queries."
+          title="No FAQs found"
+          description="Try a different keyword or clear the search."
         />
       )}
     </motion.div>
   );
 };
+
 export default FAQPage;
