@@ -221,6 +221,22 @@ export const apiService = {
     await apiClient.post('/chat/chatbot/clear', { sessionId });
   },
 
+  // --- Notifications ---
+  async getNotifications(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>('/notifications');
+      return response.data.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async markNotificationAsRead(id: string): Promise<void> {
+    await apiClient.patch(`/notifications/${id}/read`);
+  },
+  async markAllNotificationsAsRead(): Promise<void> {
+    await apiClient.patch('/notifications/read-all');
+  },
+
   // --- Badges ---
   async getUserBadges(userId: string): Promise<any[]> {
     try {

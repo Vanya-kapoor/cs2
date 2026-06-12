@@ -13,6 +13,7 @@ import { BadgeService } from '../badge/badge.service';
 import { BadgeRepository } from '../badge/badge.repository';
 import { UserRepository } from '../user/user.repository';
 import { ForbiddenError } from '../../core/errors';
+import { NotificationService } from '../notification/notification.service';
 
 export interface ApproveReplyResult {
   faq: IFaq;
@@ -47,12 +48,25 @@ export class ReplyService extends BaseService {
       throw new BadRequestError(Messages.QUERY_ALREADY_RESOLVED);
     }
 
-    return this.replyRepo.create({
+    const reply = await this.replyRepo.create({
       queryId: new Types.ObjectId(queryId),
       userId,
       content: dto.content,
       isApproved: false,
     });
+
+    const notificationService = new NotificationService();
+    if (query.createdBy && query.createdBy.toString() !== userId.toString()) {
+      notificationService.createNotification({
+        userId: query.createdBy.toString(),
+        title: 'New Reply',
+        message: 'Someone has replied to your question.',
+        type: 'REPLY',
+        link: `/queries/${queryId}`
+      }).catch(console.error);
+    }
+
+    return reply;
   }
 
   /**
@@ -105,6 +119,27 @@ export class ReplyService extends BaseService {
     badgeService.evaluateContributionBadges(reply.userId.toString()).catch(console.error);
     if (query.createdBy) {
       badgeService.evaluateResolutionBadges(query.createdBy.toString()).catch(console.error);
+    }
+
+    const notificationService = new NotificationService();
+    // Notify the replier
+    notificationService.createNotification({
+      userId: reply.userId.toString(),
+      title: 'Reply Approved',
+      message: 'Your reply has been approved by an admin!',
+      type: 'APPROVAL',
+      link: `/faqs/${faq._id}`
+    }).catch(console.error);
+
+    // Notify the query author
+    if (query.createdBy) {
+      notificationService.createNotification({
+        userId: query.createdBy.toString(),
+        title: 'Question Marked as FAQ',
+        message: 'Your question has been marked as a frequently asked question!',
+        type: 'FAQ',
+        link: `/faqs/${faq._id}`
+      }).catch(console.error);
     }
 
     return { faq, reply: approvedReply! };

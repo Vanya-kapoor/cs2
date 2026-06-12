@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { NotificationPanel } from './NotificationPanel';
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
       <div className="flex items-center gap-4">
         {isAuthenticated && currentUser ? (
           <div className="flex items-center gap-3">
+            <NotificationPanel />
             <div className="hidden sm:flex flex-col items-end">
               <span className="font-medium text-sm text-slate-800 leading-none">{currentUser.name}</span>
               <div className="flex items-center gap-2 mt-1">
