@@ -3,12 +3,32 @@ import { motion } from 'framer-motion';
 import { MessageSquare, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { EmptyState } from '../components/CommonWidgets';
+import { EmptyState, Skeleton } from '../components/CommonWidgets';
 import { BadgeProfileSection } from '../components/badge/BadgeProfileSection';
 
 export const Profile: React.FC = () => {
-  const { currentUser, openLoginModal } = useAuth();
+  const { currentUser, authLoading, openLoginModal } = useAuth();
   const { questions } = useAppContext();
+
+  if (authLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-8">
+        <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6">
+          <Skeleton className="w-24 h-24 rounded-full" />
+          <div className="flex-1 w-full space-y-3">
+            <Skeleton className="h-7 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-3 w-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <Skeleton className="h-32" />
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return (

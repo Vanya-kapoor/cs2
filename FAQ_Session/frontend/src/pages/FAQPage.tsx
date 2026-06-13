@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 import SearchBar from '../components/SearchBar';
 import FAQCard from '../components/FAQCard';
-import { EmptyState } from '../components/CommonWidgets';
+import { EmptyState, SkeletonCard } from '../components/CommonWidgets';
 
 export const FAQPage: React.FC = () => {
-  const { questions } = useAppContext();
+  const { questions, loading } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -68,7 +68,11 @@ export const FAQPage: React.FC = () => {
       </div>
 
       {/* Grid of cards */}
-      {faqs.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : faqs.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
           {faqs.map((faq, idx) => (
             <FAQCard key={faq.id} faq={faq} index={idx} />

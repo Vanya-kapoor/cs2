@@ -5,6 +5,7 @@ import { apiService } from '../utils/api';
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
+  authLoading: boolean;
   isLoginModalOpen: boolean;
   openLoginModal: () => void;
   closeLoginModal: () => void;
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const syncUser = async () => {
@@ -28,6 +30,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (user) setCurrentUser(user);
       } catch (err) {
         console.error('Failed to sync user:', err);
+      } finally {
+        setAuthLoading(false);
       }
     };
     syncUser();
@@ -74,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         currentUser,
         isAuthenticated: currentUser !== null,
+        authLoading,
         isLoginModalOpen,
         openLoginModal,
         closeLoginModal,

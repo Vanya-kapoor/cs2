@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from './CommonWidgets';
 import { NotificationPanel } from './NotificationPanel';
 
 interface NavbarProps {
@@ -8,7 +9,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
-  const { currentUser, isAuthenticated, logout, openLoginModal } = useAuth();
+  const { currentUser, isAuthenticated, authLoading, logout, openLoginModal } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between w-full h-[72px] bg-white border-b border-slate-200 px-6">
@@ -30,7 +31,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
 
       {/* Right Controls */}
       <div className="flex items-center gap-4">
-        {isAuthenticated && currentUser ? (
+        {authLoading ? (
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex flex-col items-end gap-1.5">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <Skeleton className="w-9 h-9 rounded-full" />
+          </div>
+        ) : isAuthenticated && currentUser ? (
           <div className="flex items-center gap-3">
             <NotificationPanel />
             <div className="hidden sm:flex flex-col items-end">
