@@ -23,32 +23,33 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { currentUser, openLoginModal } = useAuth();
+const { currentUser, openLoginModal, authLoading } = useAuth();
 
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
+const [questions, setQuestions] = useState<Question[]>([]);
+const [loading, setLoading] = useState(true);
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+const isAdmin = currentUser?.role === 'ADMIN';
 
-  const loadBackendData = async () => {
-    setLoading(true);
-    try {
-      const [backendFaqs, backendQueries] = await Promise.all([
-        apiService.getFaqs(),
-        apiService.getQueries(isAdmin),
-      ]);
-      setQuestions([...backendFaqs, ...backendQueries]);
-    } catch (err) {
-      console.error('Failed to sync backend data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadBackendData = async () => {
+  setLoading(true);
+  try {
+    const [backendFaqs, backendQueries] = await Promise.all([
+      apiService.getFaqs(),
+      apiService.getQueries(isAdmin),
+    ]);
+    setQuestions([...backendFaqs, ...backendQueries]);
+  } catch (err) {
+    console.error('Failed to sync backend data:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
-    loadBackendData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.role]);
+useEffect(() => {
+  if (authLoading) return;
+  loadBackendData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [authLoading, currentUser?.role]);
 
   const checkAuth = (): boolean => {
     if (!currentUser) {
