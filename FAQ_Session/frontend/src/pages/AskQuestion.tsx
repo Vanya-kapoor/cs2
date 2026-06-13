@@ -1,3 +1,4 @@
+// src/pages/AskQuestion.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +10,7 @@ import { Question } from '../types';
 export const AskQuestion: React.FC = () => {
   const navigate = useNavigate();
   const { askQuestion, questions } = useAppContext();
-  const { currentUser, openLoginModal } = useAuth();
+  const { currentUser } = useAuth();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -62,11 +63,6 @@ export const AskQuestion: React.FC = () => {
     e.preventDefault();
     setSubmitError('');
 
-    if (!currentUser) {
-      openLoginModal();
-      return;
-    }
-
     if (!validate()) return;
 
     try {
@@ -106,19 +102,6 @@ export const AskQuestion: React.FC = () => {
             Get official verified answers from Mentors &amp; HR Admins
           </p>
         </div>
-
-        {/* Auth warning badge */}
-        {!currentUser && (
-          <div className="p-4 bg-pink-50 border border-pink-200 rounded-xl flex items-start gap-3 shadow-none">
-            <AlertCircle className="text-pink-600 flex-shrink-0 mt-0.5" size={18} />
-            <div>
-              <p className="text-xs font-semibold text-pink-800">Authentication Required</p>
-              <p className="text-[11px] font-normal text-pink-700/80 mt-1 leading-relaxed">
-                You can draft your question now, but you will need to sign in using the login modal before submitting.
-              </p>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Question Title */}
@@ -216,23 +199,13 @@ export const AskQuestion: React.FC = () => {
 
           {/* Submit Action */}
           <div className="pt-3">
-            {currentUser ? (
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors border border-transparent shadow-sm cursor-pointer"
-              >
-                <Send size={14} />
-                <span>Submit Query</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={openLoginModal}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors border border-transparent shadow-sm cursor-pointer"
-              >
-                <span>Unlock &amp; Submit Query 🔓</span>
-              </button>
-            )}
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors border border-transparent shadow-sm cursor-pointer"
+            >
+              <Send size={14} />
+              <span>Submit Query</span>
+            </button>
           </div>
         </form>
       </div>

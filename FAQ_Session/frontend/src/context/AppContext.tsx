@@ -62,8 +62,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await loadBackendData();
   };
 
+// src/context/AppContext.tsx (relevant snippet, lines 65-72)
+// src/context/AppContext.tsx (relevant snippet, lines 65-72)
   const askQuestion = async (title: string, description: string) => {
-    if (!checkAuth() || !currentUser) return;
     try {
       const newQuestion = await apiService.createQuery(title, description);
       setQuestions(prev => [newQuestion, ...prev]);
