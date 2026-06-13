@@ -40,7 +40,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-5 border border-slate-200 bg-white rounded-xl shadow-sm relative ${
+      className={`p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm relative ${
         answer.isAccepted ? 'border-emerald-500 bg-emerald-50/10' : ''
       }`}
     >
@@ -53,9 +53,9 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
       )}
 
       {/* Answer Header: Author info */}
-      <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
+      <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-xl shadow-sm overflow-hidden">
+          <div className="w-10 h-10 border border-slate-200 dark:border-slate-700 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-xl shadow-sm overflow-hidden">
             {answer.author.avatar?.startsWith('http') ? (
               <img src={answer.author.avatar} alt={answer.author.name} referrerPolicy="no-referrer"
                 className="w-full h-full object-cover" />
@@ -65,8 +65,8 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm text-slate-800">{answer.author.name}</span>
-              <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
+              <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{answer.author.name}</span>
+              <span className="text-[9px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
                 {answer.author.role}
               </span>
             </div>
@@ -88,7 +88,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-1.5 text-rose-500 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors disabled:opacity-40 cursor-pointer"
+              className="p-1.5 text-rose-500 hover:bg-rose-50 border border-slate-100 dark:border-slate-700 hover:border-rose-200 rounded transition-colors disabled:opacity-40 cursor-pointer"
               title="Delete Reply"
             >
               <Trash2 size={13} />
@@ -98,13 +98,13 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
       </div>
 
       {/* Answer Content */}
-      <p className="text-xs md:text-sm font-normal text-slate-700 whitespace-pre-line leading-relaxed mb-4">
+      <p className="text-xs md:text-sm font-normal text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed mb-4">
         {answer.content}
       </p>
 
       {/* Accept button (admin or question author) */}
       {canAccept && !answer.isAccepted && !isQuestionResolved && (
-        <div className="flex items-center justify-end border-t border-slate-100 pt-3">
+        <div className="flex items-center justify-end border-t border-slate-100 dark:border-slate-700 pt-3">
           <button
             onClick={handleAccept}
             className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors border border-transparent"

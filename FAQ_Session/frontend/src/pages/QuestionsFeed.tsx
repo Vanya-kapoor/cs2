@@ -46,9 +46,9 @@ export const QuestionsFeed: React.FC = () => {
       className="space-y-6"
     >
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 font-sans flex items-center gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 font-sans flex items-center gap-2">
             <span>Community Forum</span>
             <MessageSquare className="text-blue-500" size={22} />
           </h1>
@@ -67,7 +67,7 @@ export const QuestionsFeed: React.FC = () => {
       </div>
 
       {/* Sorting Selectors */}
-      <div className="flex flex-wrap items-center gap-1 bg-white p-1 border border-slate-200 rounded-xl w-fit shadow-sm">
+      <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 rounded-xl w-fit shadow-sm">
         {(["newest", "unanswered", "answered"] as const).map((opt) => (
           <button
             key={opt}
@@ -75,7 +75,7 @@ export const QuestionsFeed: React.FC = () => {
             className={`px-4 py-1.5 font-semibold text-xs uppercase transition-colors rounded-lg ${
               filter === opt
                 ? "bg-blue-50 text-blue-700 font-semibold"
-                : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
+                : "hover:bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100"
             }`}
           >
             {opt}

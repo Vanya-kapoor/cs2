@@ -13,7 +13,7 @@ export const Profile: React.FC = () => {
   if (authLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6">
+        <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6">
           <Skeleton className="w-24 h-24 rounded-full" />
           <div className="flex-1 w-full space-y-3">
             <Skeleton className="h-7 w-1/2" />
@@ -61,9 +61,9 @@ export const Profile: React.FC = () => {
       className="max-w-3xl mx-auto space-y-8"
     >
       {/* Profile Card Header */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
+      <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
         {/* Large Avatar */}
-        <div className="w-24 h-24 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-5xl shadow-sm relative overflow-hidden">
+        <div className="w-24 h-24 border border-slate-200 dark:border-slate-700 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-5xl shadow-sm relative overflow-hidden">
           {currentUser.avatar?.startsWith('http') ? (
             <img src={currentUser.avatar} alt={currentUser.name} referrerPolicy="no-referrer"
               className="w-full h-full object-cover" />
@@ -77,7 +77,7 @@ export const Profile: React.FC = () => {
 
         {/* Details info */}
         <div className="flex-1 space-y-2">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 font-sans leading-none">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 font-sans leading-none">
             {currentUser.name}
           </h1>
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
@@ -86,11 +86,11 @@ export const Profile: React.FC = () => {
 
           {/* Reputation bar */}
           <div className="pt-2 max-w-sm">
-            <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
+            <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
               <span>Reputation Level</span>
               <span>{reputation} Rep</span>
             </div>
-            <div className="w-full h-3 bg-slate-100 border border-slate-200/50 rounded-full overflow-hidden">
+            <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700/50 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-600 rounded-full"
                 style={{ width: `${Math.min((reputation / 500) * 100, 100)}%` }}
@@ -102,19 +102,19 @@ export const Profile: React.FC = () => {
 
       {/* Grid of Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600">
+        <div className="p-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600 dark:text-slate-400">
           <HelpCircle size={22} className="text-slate-400" />
           <div>
             <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Questions Asked</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{myQuestions.length}</p>
+            <p className="text-2xl font-semibold text-slate-800 dark:text-slate-200 leading-none mt-1.5 font-sans">{myQuestions.length}</p>
           </div>
         </div>
 
-        <div className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600">
+        <div className="p-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600 dark:text-slate-400">
           <MessageSquare size={22} className="text-slate-400" />
           <div>
             <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Answers Posted</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{myAnswers.length}</p>
+            <p className="text-2xl font-semibold text-slate-800 dark:text-slate-200 leading-none mt-1.5 font-sans">{myAnswers.length}</p>
           </div>
         </div>
       </div>

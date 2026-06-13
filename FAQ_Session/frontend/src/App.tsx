@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { AppProvider } from './context/AppContext';
+import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './layouts/MainLayout';
 
 // Pages
@@ -18,27 +19,29 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <SocketProvider>
-          <AppProvider>
-            <Routes>
-              {/* Standalone page — no layout chrome */}
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <AppProvider>
+              <Routes>
+                {/* Standalone page — no layout chrome */}
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-              {/* Main app with sidebar/navbar layout */}
-              <Route path="/" element={<MainLayout />}>
-                <Route index element={<Home />} />
-                <Route path="faqs" element={<FAQPage />} />
-                <Route path="questions" element={<QuestionsFeed />} />
-                <Route path="questions/:id" element={<FAQDetailsPage />} />
-                <Route path="ask" element={<AskQuestion />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="admin" element={<AdminDashboard />} />
-              </Route>
-            </Routes>
-          </AppProvider>
-        </SocketProvider>
-      </AuthProvider>
+                {/* Main app with sidebar/navbar layout */}
+                <Route path="/" element={<MainLayout />}>
+                  <Route index element={<Home />} />
+                  <Route path="faqs" element={<FAQPage />} />
+                  <Route path="questions" element={<QuestionsFeed />} />
+                  <Route path="questions/:id" element={<FAQDetailsPage />} />
+                  <Route path="ask" element={<AskQuestion />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="admin" element={<AdminDashboard />} />
+                </Route>
+              </Routes>
+            </AppProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

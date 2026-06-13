@@ -105,7 +105,7 @@ export const LoginModal: React.FC = () => {
   };
 
   const inputBase =
-    'w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
+    'w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:text-slate-500 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
 
   const inputError =
     'border-red-300 focus:ring-red-500/30 focus:border-red-400';
@@ -130,16 +130,16 @@ export const LoginModal: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden"
+            className="relative w-full max-w-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden"
           >
             {/* Top accent bar */}
-            <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+            <div className="h-1 w-full bg-blue-600 dark:bg-blue-500" />
 
             <div className="p-6">
               {/* Close */}
               <button
                 onClick={handleClose}
-                className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:bg-slate-700 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -149,31 +149,31 @@ export const LoginModal: React.FC = () => {
                 <>
                   <div className="mb-5">
                     <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-lg mb-3">🔑</div>
-                    <h2 className="text-lg font-bold text-slate-800">Welcome back</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Sign in to your Yaksha account</p>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Welcome back</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">Sign in to your Yaksha account</p>
                   </div>
 
                   {/* Google */}
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading}
-                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all shadow-sm mb-4 disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 transition-all shadow-sm mb-4 disabled:opacity-60"
                   >
                     {googleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleIcon />}
                     <span>{googleLoading ? 'Redirecting...' : 'Continue with Google'}</span>
                   </button>
 
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 h-px bg-slate-100" />
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">or</span>
-                    <div className="flex-1 h-px bg-slate-100" />
+                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">or</span>
+                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
                   </div>
 
                   <form onSubmit={handleSignIn} className="space-y-3" noValidate>
                     {/* Email */}
                     <div>
                       <div className="relative">
-                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type="email"
                           placeholder="Email address"
@@ -188,7 +188,7 @@ export const LoginModal: React.FC = () => {
                     {/* Password */}
                     <div>
                       <div className="relative">
-                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password"
@@ -199,7 +199,7 @@ export const LoginModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500"
                         >
                           {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
@@ -232,7 +232,7 @@ export const LoginModal: React.FC = () => {
                     </button>
                   </form>
 
-                  <p className="text-center text-xs text-slate-500 mt-4">
+                  <p className="text-center text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-4">
                     Don't have an account?{' '}
                     <button onClick={() => switchView('signup')} className="text-blue-600 font-semibold hover:underline">
                       Sign up
@@ -246,31 +246,31 @@ export const LoginModal: React.FC = () => {
                 <>
                   <div className="mb-5">
                     <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-lg mb-3">🚀</div>
-                    <h2 className="text-lg font-bold text-slate-800">Create account</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Join Yaksha and start collaborating</p>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Create account</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">Join Yaksha and start collaborating</p>
                   </div>
 
                   {/* Google */}
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading}
-                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all shadow-sm mb-4 disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 transition-all shadow-sm mb-4 disabled:opacity-60"
                   >
                     {googleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleIcon />}
                     <span>{googleLoading ? 'Redirecting...' : 'Sign up with Google'}</span>
                   </button>
 
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 h-px bg-slate-100" />
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">or</span>
-                    <div className="flex-1 h-px bg-slate-100" />
+                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">or</span>
+                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
                   </div>
 
                   <form onSubmit={handleSignUp} className="space-y-3" noValidate>
                     {/* Name */}
                     <div>
                       <div className="relative">
-                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type="text"
                           placeholder="Full name"
@@ -285,7 +285,7 @@ export const LoginModal: React.FC = () => {
                     {/* Email */}
                     <div>
                       <div className="relative">
-                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type="email"
                           placeholder="Email address"
@@ -300,7 +300,7 @@ export const LoginModal: React.FC = () => {
                     {/* Password */}
                     <div>
                       <div className="relative">
-                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Password (min 6 characters)"
@@ -311,7 +311,7 @@ export const LoginModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500"
                         >
                           {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
@@ -322,7 +322,7 @@ export const LoginModal: React.FC = () => {
                     {/* Confirm Password */}
                     <div>
                       <div className="relative">
-                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Confirm password"
@@ -333,7 +333,7 @@ export const LoginModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500"
                         >
                           {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
@@ -356,7 +356,7 @@ export const LoginModal: React.FC = () => {
                     </button>
                   </form>
 
-                  <p className="text-center text-xs text-slate-500 mt-4">
+                  <p className="text-center text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-4">
                     Already have an account?{' '}
                     <button onClick={() => switchView('signin')} className="text-blue-600 font-semibold hover:underline">
                       Sign in
@@ -370,15 +370,15 @@ export const LoginModal: React.FC = () => {
                 <>
                   <button
                     onClick={() => switchView('signin')}
-                    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 mb-4 transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-300 mb-4 transition-colors"
                   >
                     <ArrowLeft size={13} /> Back to sign in
                   </button>
 
                   <div className="mb-5">
                     <div className="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-lg mb-3">🔒</div>
-                    <h2 className="text-lg font-bold text-slate-800">Reset password</h2>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Reset password</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
                       Enter your email and we'll send you a link to reset your password.
                     </p>
                   </div>
@@ -386,7 +386,7 @@ export const LoginModal: React.FC = () => {
                   <form onSubmit={handleForgotPassword} className="space-y-3" noValidate>
                     <div>
                       <div className="relative">
-                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type="email"
                           placeholder="Email address"
@@ -421,12 +421,12 @@ export const LoginModal: React.FC = () => {
                   <div className="flex items-center justify-center w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-full mx-auto mb-4">
                     <CheckCircle size={28} className="text-emerald-500" />
                   </div>
-                  <h2 className="text-lg font-bold text-slate-800 mb-2">Check your inbox</h2>
-                  <p className="text-xs text-slate-500 leading-relaxed mb-1">
+                  <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Check your inbox</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed mb-1">
                     We've sent a password reset link to
                   </p>
-                  <p className="text-sm font-semibold text-slate-700 mb-5">{forgotEmail}</p>
-                  <p className="text-[11px] text-slate-400 mb-6">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-5">{forgotEmail}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-6">
                     The link expires in 1 hour. Check your spam folder if you don't see it.
                   </p>
                   <button

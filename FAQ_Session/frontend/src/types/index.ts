@@ -39,4 +39,5 @@ export interface Question {
   createdAt: string;
   author: User;
   answers: Answer[];
+  screenshot?: string | null;
 }

@@ -42,17 +42,17 @@ export const BadgeProfileSection: React.FC<BadgeProfileSectionProps> = ({ userId
 
   if (loading) {
     return (
-      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="animate-pulse flex space-x-4">
-          <div className="h-24 w-full bg-gray-200 rounded" />
+          <div className="h-24 w-full bg-gray-200 dark:bg-slate-700 rounded" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+    <div className="mt-8 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4 flex items-center gap-2">
         <span>🏆</span> Achievements & Badges
       </h3>
       <BadgeGrid badges={badges} />

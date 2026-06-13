@@ -48,7 +48,7 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex overflow-hidden font-sans transition-colors">
       {/* Sidebar Navigation */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
@@ -66,35 +66,35 @@ export const MainLayout: React.FC = () => {
       {/* Floating Yaksha AI Chatbot Widget */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         {isChatOpen && (
-          <div className="w-96 max-w-[calc(100vw-2rem)] border border-slate-200 bg-white shadow-2xl z-50 flex flex-col rounded-2xl mb-4 overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <div className="w-96 max-w-[calc(100vw-2rem)] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl z-50 flex flex-col rounded-2xl mb-4 overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {/* Header */}
-            <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
-              <div className="font-semibold text-sm text-slate-800 flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 p-4 flex justify-between items-center">
+              <div className="font-semibold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
                 <span className="text-xl">🤖</span>
                 <div>
-                  <h4 className="leading-none text-xs font-semibold text-slate-900 uppercase tracking-wider">Yaksha AI</h4>
-                  <span className="text-[10px] text-slate-500 font-medium leading-none">VINS Assistant</span>
+                  <h4 className="leading-none text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Yaksha AI</h4>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-none">VINS Assistant</span>
                 </div>
               </div>
               <button 
                 onClick={() => setIsChatOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-slate-100 transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
             {/* Scrollable Message Box */}
-            <div className="flex-1 min-h-[220px] max-h-[380px] overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-thin">
+            <div className="flex-1 min-h-[220px] max-h-[380px] overflow-y-auto p-4 space-y-3 bg-slate-50/50 dark:bg-slate-800/50 scrollbar-thin">
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <span className="text-[10px] font-semibold text-slate-400 mb-1">
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-1">
                     {msg.role === 'user' ? 'You' : 'Yaksha'}
                   </span>
                   <div className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                     msg.role === 'user' 
                       ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none font-normal' 
-                      : 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-none font-normal'
+                      : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-none font-normal'
                   }`}>
                     {msg.content}
                   </div>
@@ -102,10 +102,10 @@ export const MainLayout: React.FC = () => {
               ))}
               {isLoading && (
                 <div className="flex flex-col items-start">
-                  <span className="text-[10px] font-semibold text-slate-400 mb-1">Yaksha</span>
-                  <div className="px-4 py-2.5 border border-slate-200 text-sm font-medium bg-white text-slate-500 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2 animate-pulse">
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-1">Yaksha</span>
+                  <div className="px-4 py-2.5 border border-slate-200 dark:border-slate-600 text-sm font-medium bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2 animate-pulse">
                     <span>🤖 Thinking...</span>
-                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full animate-ping"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-600 dark:bg-slate-400 rounded-full animate-ping"></span>
                   </div>
                 </div>
               )}
@@ -113,14 +113,14 @@ export const MainLayout: React.FC = () => {
             </div>
 
             {/* Chat Input Field */}
-            <form onSubmit={handleSend} className="border-t border-slate-200 p-3 bg-white flex gap-2">
+            <form onSubmit={handleSend} className="border-t border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-800 flex gap-2">
               <input
                 type="text"
                 placeholder="Ask me about leaves, stipends, projects..."
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 disabled={isLoading}
-                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-normal outline-none bg-slate-50 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="flex-1 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-normal outline-none bg-slate-50 dark:bg-slate-700 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
               />
               <button
                 type="submit"

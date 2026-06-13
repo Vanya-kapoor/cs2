@@ -45,13 +45,13 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   const inputBase =
-    'w-full pl-9 pr-9 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
+    'w-full pl-9 pr-9 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:text-slate-500 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all';
 
   const inputErrorClass = 'border-red-300 focus:ring-red-500/30 focus:border-red-400';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden">
         <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
         <div className="p-6">
           {isSubmitSuccessful && !apiError ? (
@@ -59,8 +59,8 @@ const ResetPasswordPage: React.FC = () => {
               <div className="flex items-center justify-center w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-full mx-auto mb-4">
                 <CheckCircle size={28} className="text-emerald-500" />
               </div>
-              <h2 className="text-lg font-bold text-slate-800 mb-2">Password reset!</h2>
-              <p className="text-xs text-slate-500 leading-relaxed mb-6">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Password reset!</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 leading-relaxed mb-6">
                 Your password has been successfully updated. You can now sign in with your new password.
               </p>
               <button
@@ -74,8 +74,8 @@ const ResetPasswordPage: React.FC = () => {
             <>
               <div className="mb-5">
                 <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-lg mb-3">🔐</div>
-                <h2 className="text-lg font-bold text-slate-800">Set new password</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Choose a strong password for your account.</p>
+                <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Set new password</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">Choose a strong password for your account.</p>
               </div>
 
               {!token ? (
@@ -88,7 +88,7 @@ const ResetPasswordPage: React.FC = () => {
                   {/* New Password */}
                   <div>
                     <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         placeholder="New password"
@@ -99,7 +99,7 @@ const ResetPasswordPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500"
                       >
                         {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
@@ -110,7 +110,7 @@ const ResetPasswordPage: React.FC = () => {
                   {/* Confirm Password */}
                   <div>
                     <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="Confirm new password"
@@ -121,7 +121,7 @@ const ResetPasswordPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:text-slate-500"
                       >
                         {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>

@@ -47,9 +47,9 @@ export const FAQPage: React.FC = () => {
       className="space-y-6"
     >
       {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 font-sans">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
             Verified FAQs
           </h1>
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">

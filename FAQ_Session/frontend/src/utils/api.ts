@@ -125,6 +125,7 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
       badges: [],
     },
     answers: mappedAnswers,
+    screenshot: query.screenshot || null,
   };
 };
 
@@ -174,8 +175,8 @@ export const apiService = {
       return [];
     }
   },
-  async createQuery(title: string, description: string): Promise<Question> {
-    const response = await apiClient.post<ApiResponse<any>>('/queries', { title, description });
+  async createQuery(title: string, description: string, screenshot?: string | null): Promise<Question> {
+    const response = await apiClient.post<ApiResponse<any>>('/queries', { title, description, screenshot: screenshot || null });
     return mapQueryToQuestion(response.data.data, []);
   },
   async addReply(queryId: string, content: string): Promise<Answer> {

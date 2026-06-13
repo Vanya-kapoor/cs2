@@ -42,6 +42,7 @@ export class QueryService extends BaseService {
     const query = await this.queryRepo.create({
       title: dto.title,
       description: dto.description,
+      screenshot: dto.screenshot ?? null,
       createdBy: userId ?? null,
       status: 'pending',
     });

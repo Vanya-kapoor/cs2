@@ -6,7 +6,7 @@ import { apiService } from '../utils/api';
 interface AppContextType {
   questions: Question[];
   loading: boolean;
-  askQuestion: (title: string, description: string) => Promise<void>;
+  askQuestion: (title: string, description: string, screenshot?: string | null) => Promise<void>;
   postAnswer: (questionId: string, content: string) => Promise<void>;
   acceptAnswer: (questionId: string, answerId: string) => Promise<void>;
   convertToFAQ: (questionId: string) => Promise<void>;
@@ -65,9 +65,9 @@ useEffect(() => {
 
 // src/context/AppContext.tsx (relevant snippet, lines 65-72)
 // src/context/AppContext.tsx (relevant snippet, lines 65-72)
-  const askQuestion = async (title: string, description: string) => {
+  const askQuestion = async (title: string, description: string, screenshot?: string | null) => {
     try {
-      const newQuestion = await apiService.createQuery(title, description);
+      const newQuestion = await apiService.createQuery(title, description, screenshot);
       setQuestions(prev => [newQuestion, ...prev]);
     } catch (err) {
       console.error('Failed to raise query on backend:', err);

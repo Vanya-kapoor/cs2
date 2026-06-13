@@ -39,13 +39,12 @@ export const Home: React.FC = () => {
       className="space-y-8"
     >
       {/* Hero Banner */}
-      <div className="relative p-8 md:p-12 border border-slate-200 bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col items-center text-center z-10">
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/40 via-white to-indigo-50/20 -z-10" />
+      <div className="relative p-8 md:p-12 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col items-center text-center z-10">
 
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 max-w-2xl mb-3 font-sans">
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 max-w-2xl mb-3 font-sans">
           Find answers. Share knowledge. Help future interns.
         </h1>
-        <p className="text-sm text-slate-500 max-w-md mb-8 font-normal">
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-8 font-normal">
           Welcome to <span className="font-semibold text-blue-600">Yaksha FAQ</span>! Ask onboarding questions, check stipends, and verify evaluations.
         </p>
 
@@ -59,16 +58,16 @@ export const Home: React.FC = () => {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard title="Total FAQs" value={stats.totalFAQs} color="bg-white" icon="❓" />
-        <StatsCard title="Open Queries" value={stats.openQuestions} color="bg-white" icon="💬" />
-        <StatsCard title="Answered" value={stats.answeredQuestions} color="bg-white" icon="✅" />
+        <StatsCard title="Total FAQs" value={stats.totalFAQs} color="bg-white dark:bg-slate-800" icon="❓" />
+        <StatsCard title="Open Queries" value={stats.openQuestions} color="bg-white dark:bg-slate-800" icon="💬" />
+        <StatsCard title="Answered" value={stats.answeredQuestions} color="bg-white dark:bg-slate-800" icon="✅" />
       </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Questions */}
-        <div className="p-6 border border-slate-200 bg-white rounded-xl shadow-sm">
-          <h2 className="font-semibold text-lg text-slate-800 mb-4 flex items-center gap-2 font-sans">
+        <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 font-sans">
             <MessageSquare size={18} className="text-blue-500" />
             <span>Recent Questions</span>
           </h2>
@@ -76,7 +75,7 @@ export const Home: React.FC = () => {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : recentQuestions.length > 0 ? (
@@ -85,15 +84,15 @@ export const Home: React.FC = () => {
                 <div
                   key={q.id}
                   onClick={() => navigate(`/questions/${q.id}`)}
-                  className="p-3.5 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all cursor-pointer flex gap-3 items-center justify-between"
+                  className="p-3.5 border border-slate-100 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-50 dark:bg-slate-900 hover:border-slate-200 dark:border-slate-700 transition-all cursor-pointer flex gap-3 items-center justify-between"
                 >
                   <div className="min-w-0 flex-1">
-                    <h3 className="inline font-semibold text-sm hover:text-blue-600 transition-colors text-slate-800">
+                    <h3 className="inline font-semibold text-sm hover:text-blue-600 transition-colors text-slate-800 dark:text-slate-200">
                       {q.title}
                     </h3>
                   </div>
                   <span className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded-full border flex-shrink-0
-                    bg-slate-50 text-slate-500 border-slate-200">
+                    bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
                     {q.status}
                   </span>
                 </div>
@@ -105,8 +104,8 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Recently Resolved */}
-        <div className="p-6 border border-slate-200 bg-white rounded-xl shadow-sm">
-          <h2 className="font-semibold text-lg text-slate-800 mb-4 flex items-center gap-2 font-sans">
+        <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 font-sans">
             <Award size={18} className="text-emerald-500" />
             <span>Recently Resolved</span>
           </h2>
@@ -114,7 +113,7 @@ export const Home: React.FC = () => {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : recentlyAnswered.length > 0 ? (
@@ -123,13 +122,13 @@ export const Home: React.FC = () => {
                 <div
                   key={q.id}
                   onClick={() => navigate(`/questions/${q.id}`)}
-                  className="p-3.5 border border-slate-100 rounded-lg bg-emerald-50/10 hover:bg-emerald-50/20 hover:border-emerald-100/50 transition-all cursor-pointer flex gap-3 items-start justify-between"
+                  className="p-3.5 border border-slate-100 dark:border-slate-700 rounded-lg bg-emerald-50/10 hover:bg-emerald-50/20 hover:border-emerald-100/50 transition-all cursor-pointer flex gap-3 items-start justify-between"
                 >
                   <div>
-                    <h3 className="font-semibold text-sm hover:text-blue-600 text-slate-800">
+                    <h3 className="font-semibold text-sm hover:text-blue-600 text-slate-800 dark:text-slate-200">
                       {q.title}
                     </h3>
-                    <p className="text-xs text-slate-500 font-normal line-clamp-1 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-normal line-clamp-1 mt-1">
                       💡 {q.answers[0]?.content || 'Answer pending official confirmation.'}
                     </p>
                   </div>

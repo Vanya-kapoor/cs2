@@ -4,17 +4,18 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
     "./public/index.html"
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         brand: {
           cream: '#FFFFFF',
-          yellow: '#EFF6FF', // mapped to very soft blue for background consistency
-          green: '#ECFDF5',  // soft green tint
-          blue: '#EFF6FF',   // soft blue tint
-          pink: '#FDF2F8',   // soft pink tint
-          purple: '#F5F3FF', // soft purple tint
-          orange: '#FFF7ED', // soft orange tint
+          yellow: '#EFF6FF',
+          green: '#ECFDF5',
+          blue: '#EFF6FF',
+          pink: '#FDF2F8',
+          purple: '#F5F3FF',
+          orange: '#FFF7ED',
         }
       },
       boxShadow: {

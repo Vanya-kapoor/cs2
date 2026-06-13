@@ -41,7 +41,6 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  // Queries that aren't yet FAQs and aren't resolved
   const openModerationQueue = questions.filter(q => !q.isOfficial && q.status !== 'RESOLVED');
 
   return (
@@ -53,18 +52,18 @@ export const AdminDashboard: React.FC = () => {
       className="space-y-8"
     >
       {/* Header Panel */}
-      <div className="flex items-center gap-3 p-5 border border-slate-200 bg-white rounded-2xl shadow-sm text-slate-800 relative overflow-hidden z-10">
-        <div className="absolute right-[-10px] top-[-10px] rotate-12 text-slate-100 select-none -z-10">
+      <div className="flex items-center gap-3 p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100 relative overflow-hidden z-10">
+        <div className="absolute right-[-10px] top-[-10px] rotate-12 text-slate-100 dark:text-slate-700 select-none -z-10">
           <ShieldCheck size={90} />
         </div>
-        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-red-50 text-red-600 text-xl font-bold">
+        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xl font-bold">
           🛡️
         </div>
         <div>
-          <h1 className="font-semibold text-xl tracking-tight text-slate-900 font-sans">
+          <h1 className="font-semibold text-xl tracking-tight text-slate-900 dark:text-slate-100 font-sans">
             Admin Panel &amp; Moderation
           </h1>
-          <p className="text-xs font-normal text-slate-500 mt-1">
+          <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">
             Resolve queries, moderate forum, and endorse official FAQs.
           </p>
         </div>
@@ -72,24 +71,24 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="p-5 border border-slate-200 bg-white rounded-xl shadow-sm">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider">Verified FAQs</p>
-          <p className="text-2xl font-semibold text-slate-800 mt-1 font-sans">{stats.totalFAQs}</p>
+        <div className="p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Verified FAQs</p>
+          <p className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 font-sans">{stats.totalFAQs}</p>
         </div>
-        <div className="p-5 border border-slate-200 bg-white rounded-xl shadow-sm">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider">Open Queries</p>
-          <p className="text-2xl font-semibold text-amber-600 mt-1 font-sans">{stats.openQuestions}</p>
+        <div className="p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Open Queries</p>
+          <p className="text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 font-sans">{stats.openQuestions}</p>
         </div>
-        <div className="p-5 border border-slate-200 bg-white rounded-xl shadow-sm">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider">Answered</p>
-          <p className="text-2xl font-semibold text-emerald-600 mt-1 font-sans">{stats.answeredQuestions}</p>
+        <div className="p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <p className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Answered</p>
+          <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1 font-sans">{stats.answeredQuestions}</p>
         </div>
       </div>
 
       {/* Moderation Queue */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
-        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
-          <HelpCircle size={18} className="text-indigo-500" />
+      <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm space-y-4">
+        <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3 font-sans">
+          <HelpCircle size={18} className="text-indigo-500 dark:text-indigo-400" />
           <span>Forum Moderation Queue ({openModerationQueue.length})</span>
         </h2>
 
@@ -98,7 +97,7 @@ export const AdminDashboard: React.FC = () => {
             {openModerationQueue.map((q) => (
               <div
                 key={q.id}
-                className="p-4 border border-slate-100 bg-slate-50/40 rounded-xl flex flex-col gap-3 hover:bg-slate-50 transition-colors"
+                className="p-4 border border-slate-100 dark:border-slate-700 bg-slate-50/40 dark:bg-slate-700/40 rounded-xl flex flex-col gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors"
               >
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <StatusBadge status={q.status} />
@@ -107,31 +106,47 @@ export const AdminDashboard: React.FC = () => {
                 <div>
                   <h3
                     onClick={() => navigate(`/questions/${q.id}`)}
-                    className="font-semibold text-sm hover:text-blue-600 cursor-pointer text-slate-800 transition-colors"
+                    className="font-semibold text-sm hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer text-slate-800 dark:text-slate-100 transition-colors"
                   >
                     {q.title}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                     {q.description}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1">
+                {/* Screenshot preview for admin */}
+                {q.screenshot && (
+                  <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
+                    <div className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">📎 Attached Screenshot</span>
+                    </div>
+                    <img
+                      src={q.screenshot}
+                      alt="Query screenshot"
+                      className="w-full max-h-48 object-contain bg-white dark:bg-slate-800 cursor-pointer"
+                      onClick={() => window.open(q.screenshot!, '_blank')}
+                      title="Click to open full size"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-2.5 mt-1">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => deleteQuestion(q.id)}
-                      className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors cursor-pointer"
+                      className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 border border-slate-100 dark:border-slate-600 hover:border-rose-200 dark:hover:border-rose-700 rounded transition-colors cursor-pointer"
                       title="Delete Question"
                     >
                       <Trash2 size={13} />
                     </button>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      By: <span className="font-semibold text-slate-700">{q.author.name}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                      By: <span className="font-semibold text-slate-700 dark:text-slate-300">{q.author.name}</span>
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400">{q.answers.length} replies</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">{q.answers.length} replies</span>
                     {q.answers.length > 0 && (
                       <button
                         onClick={() => convertToFAQ(q.id)}
@@ -147,38 +162,38 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+          <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 font-medium border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/20 dark:bg-slate-700/20">
             All active forum discussions are clean and moderated.
           </div>
         )}
       </div>
 
       {/* FAQ Management */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
-        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
-          <ShieldAlert size={18} className="text-rose-500" />
+      <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm space-y-4">
+        <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3 font-sans">
+          <ShieldAlert size={18} className="text-rose-500 dark:text-rose-400" />
           <span>Manage Verified FAQs ({stats.totalFAQs})</span>
         </h2>
 
         <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
           {questions.filter(q => q.isOfficial).map((q) => (
-            <div key={q.id} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
+            <div key={q.id} className="p-3 border border-slate-100 dark:border-slate-700 rounded-lg flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <span
                   onClick={() => navigate(`/questions/${q.id}`)}
-                  className="text-xs font-semibold text-slate-800 hover:text-blue-600 cursor-pointer"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
                 >
                   {q.title}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                  <Star size={8} className="fill-emerald-600" />
+                <span className="text-[10px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <Star size={8} className="fill-emerald-600 dark:fill-emerald-400" />
                   Verified
                 </span>
                 <button
                   onClick={() => deleteQuestion(q.id)}
-                  className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors"
+                  className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 border border-slate-100 dark:border-slate-600 hover:border-rose-200 dark:hover:border-rose-700 rounded transition-colors"
                   title="Delete FAQ"
                 >
                   <Trash2 size={13} />

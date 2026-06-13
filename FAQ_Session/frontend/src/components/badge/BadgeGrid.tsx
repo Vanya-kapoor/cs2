@@ -7,7 +7,7 @@ interface BadgeGridProps {
 
 export const BadgeGrid: React.FC<BadgeGridProps> = ({ badges }) => {
   if (!badges || badges.length === 0) {
-    return <p className="text-gray-500 text-sm">No badges earned yet.</p>;
+    return <p className="text-gray-500 dark:text-slate-400 text-sm">No badges earned yet.</p>;
   }
 
   return (

@@ -5,6 +5,7 @@ const querySchema = new Schema<IQuery>(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
+    screenshot: { type: String, default: null }, // base64 or URL
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
