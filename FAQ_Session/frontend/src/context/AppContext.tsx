@@ -63,6 +63,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
 // src/context/AppContext.tsx (relevant snippet, lines 65-72)
+// src/context/AppContext.tsx (relevant snippet, lines 65-72)
   const askQuestion = async (title: string, description: string) => {
     try {
       const newQuestion = await apiService.createQuery(title, description);
@@ -71,7 +72,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.error('Failed to raise query on backend:', err);
       throw err;
     }
-  };;
+  };
 
   const postAnswer = async (questionId: string, content: string) => {
     if (!checkAuth() || !currentUser) return;
