@@ -4,14 +4,31 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, HelpCircle, ShieldAlert, Award, Star, Trash2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge, EmptyState } from '../components/CommonWidgets';
+import { StatusBadge, EmptyState, Skeleton, SkeletonStatsCard, SkeletonCard } from '../components/CommonWidgets';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { questions, convertToFAQ, deleteQuestion, getStats } = useAppContext();
-  const { currentUser } = useAuth();
+  const { currentUser, authLoading } = useAuth();
 
   const stats = getStats();
+
+  if (authLoading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <SkeletonStatsCard />
+          <SkeletonStatsCard />
+          <SkeletonStatsCard />
+        </div>
+        <div className="space-y-4">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (
