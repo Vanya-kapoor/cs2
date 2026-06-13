@@ -8,10 +8,6 @@ export const connectDB = async (): Promise<void> => {
 
     logger.info(' MongoDB connected');
 
-    // 🔥 ADD THESE LINES
-    console.log("🌍 DB NAME:", mongoose.connection.name);
-    console.log("🔗 MONGO URI:", env.MONGO_URI);
-
   } catch (err) {
     logger.error(' MongoDB connection failed', err);
     process.exit(1);

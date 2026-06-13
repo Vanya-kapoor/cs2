@@ -17,16 +17,14 @@ export class FaqService extends BaseService {
     super();
   }
 
-  async getFaqs(): Promise<PaginatedResult<IFaq>> {
-    const faqs = await this.faqRepo.findAll();
-  
-    return {
-      data: faqs,
-      total: faqs.length,
-      page: 1,
-      limit: faqs.length,
-      totalPages: 1,
-    };
+  async getFaqs(query: PaginationQuery): 
+  Promise<PaginatedResult<IFaq>> { 
+    const { page, limit, skip } = parsePagination(query); 
+    const [faqs, total] = await Promise.all([ 
+      this.faqRepo.findPaginated(skip, limit), 
+      this.faqRepo.countDocuments(), 
+    ]); 
+    return buildPaginatedResult(faqs, total, page, limit); 
   }
 
   async getFaqById(id: string): Promise<IFaq> {

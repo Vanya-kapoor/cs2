@@ -55,10 +55,10 @@ export class FaqController extends BaseController {
   }
 
   private async getFaqs(req: Request, res: Response): Promise<void> {
-    const result = await this.faqService.getFaqs();
+    const result = await this.faqService.getFaqs(req.query as PaginationQuery);
     sendPaginated(res, result, Messages.SUCCESS);
   }
-
+ 
   private async getFaqById(req: Request, res: Response): Promise<void> {
     const faq = await this.faqService.getFaqById(String(req.params['id']));
     sendSuccess(res, faq, Messages.SUCCESS);
