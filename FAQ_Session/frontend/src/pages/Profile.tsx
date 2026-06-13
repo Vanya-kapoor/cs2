@@ -2,13 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useAppContext } from '../context/AppContext';
 import { EmptyState, Skeleton } from '../components/CommonWidgets';
 import { BadgeProfileSection } from '../components/badge/BadgeProfileSection';
 
 export const Profile: React.FC = () => {
   const { currentUser, authLoading, openLoginModal } = useAuth();
-  const { questions } = useAppContext();
 
   if (authLoading) {
     return (
@@ -47,10 +45,10 @@ export const Profile: React.FC = () => {
     );
   }
 
-  // Compute stats from live backend data
-  const myQuestions = questions.filter(q => q.author.id === currentUser.id && !q.isOfficial);
-  const myAnswers = questions.flatMap(q => q.answers).filter(a => a.author.id === currentUser.id);
-  const reputation = myQuestions.length * 10 + myAnswers.length * 15;
+  // Use backend-computed stats directly
+  const reputation = currentUser.stats.reputation;
+  const questionsAsked = currentUser.stats.questionsAsked;
+  const answersPosted = currentUser.stats.answersPosted;
 
   return (
     <motion.div
@@ -106,7 +104,7 @@ export const Profile: React.FC = () => {
           <HelpCircle size={22} className="text-slate-400" />
           <div>
             <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Questions Asked</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{myQuestions.length}</p>
+            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{questionsAsked}</p>
           </div>
         </div>
 
@@ -114,7 +112,7 @@ export const Profile: React.FC = () => {
           <MessageSquare size={22} className="text-slate-400" />
           <div>
             <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Answers Posted</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{myAnswers.length}</p>
+            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{answersPosted}</p>
           </div>
         </div>
       </div>
