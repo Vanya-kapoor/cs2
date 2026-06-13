@@ -1,21 +1,46 @@
+// src/pages/FAQDetailsPage.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, Sparkles } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge } from '../components/CommonWidgets';
+import { StatusBadge, Skeleton } from '../components/CommonWidgets';
 import AnswerCard from '../components/AnswerCard';
 
 export const FAQDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { questions, postAnswer } = useAppContext();
+  const { questions, loading, postAnswer } = useAppContext();
   const { currentUser, openLoginModal } = useAuth();
   const [answerInput, setAnswerInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const question = questions.find(q => q.id === id);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <Skeleton className="h-4 w-24" />
+        <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <Skeleton className="h-7 w-3/4" />
+          <Skeleton className="h-12 w-48 rounded-xl" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+          <Skeleton className="h-3 w-2/3" />
+          <div className="flex gap-1.5 pt-2">
+            <Skeleton className="h-5 w-16 rounded-md" />
+          </div>
+        </div>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   if (!question) {
     return (
