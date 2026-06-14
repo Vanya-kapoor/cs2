@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'INTERN' | 'MENTOR';
+export type UserRole = 'ADMIN' | 'INTERN';
 
 export interface UserStats {
   questionsAsked: number;

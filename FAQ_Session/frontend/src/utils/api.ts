@@ -36,11 +36,10 @@ interface PaginatedResponse<T> {
 }
 
 // Map backend role strings to frontend UserRole
-const mapRole = (role?: string): 'ADMIN' | 'INTERN' | 'MENTOR' => {
+const mapRole = (role?: string): 'ADMIN' | 'INTERN' => {
   if (!role) return 'INTERN';
   const r = role.toLowerCase();
   if (r === 'admin') return 'ADMIN';
-  if (r === 'mentor') return 'MENTOR';
   return 'INTERN';
 };
 
@@ -94,7 +93,7 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
       badges: [],
     },
     content: rep.content,
-    isOfficial: rep.userId?.role === 'admin' || rep.userId?.role === 'mentor',
+    isOfficial: rep.userId?.role === 'admin',
     isAccepted: rep.isApproved,
     createdAt: rep.createdAt,
   }));
