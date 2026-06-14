@@ -62,20 +62,13 @@ export class ReplyService extends BaseService {
         title: 'New Reply',
         message: 'Someone has replied to your question.',
         type: 'REPLY',
-        link: `/queries/${queryId}`
+        link: `/questions/${queryId}`,
       }).catch(console.error);
     }
 
     return reply;
   }
 
-  /**
-   * Admin approves a reply:
-   *  1. Marks the reply as approved
-   *  2. Generates embedding from query title + reply content
-   *  3. Creates an FAQ entry linking back to the source query & reply
-   *  4. Marks the parent query as resolved
-   */
   async approveReply(replyId: string, adminId: Types.ObjectId): Promise<ApproveReplyResult> {
     const reply = await this.replyRepo.findById(replyId);
     if (!reply) throw new NotFoundError(Messages.REPLY_NOT_FOUND);
@@ -87,14 +80,12 @@ export class ReplyService extends BaseService {
     const query = await this.queryRepo.findById(reply.queryId.toString());
     if (!query) throw new NotFoundError(Messages.QUERY_NOT_FOUND);
 
-    // Generate embedding from query title + approved reply content
     const embeddingText = this.embeddingService.buildEmbeddingText(
       query.title,
       reply.content,
     );
     const embedding = await this.embeddingService.createEmbedding(embeddingText);
 
-    // Create the FAQ entry
     const faq = await this.faqRepo.create({
       question: query.title,
       answer: reply.content,
@@ -105,11 +96,9 @@ export class ReplyService extends BaseService {
       approvedReplyId: reply._id as Types.ObjectId,
     });
 
-    // Mark reply as approved & query as resolved
     const approvedReply = await this.replyRepo.markApproved(replyId);
     await this.queryRepo.markResolved(reply.queryId.toString());
 
-    // Badge Evaluation
     const badgeService = new BadgeService(
       new BadgeRepository(),
       new UserRepository(),
@@ -122,39 +111,41 @@ export class ReplyService extends BaseService {
     }
 
     const notificationService = new NotificationService();
-    // Notify the replier
+
+    // Notify the replier — goes to the question to see their pinned answer
     notificationService.createNotification({
       userId: reply.userId.toString(),
       title: 'Reply Approved',
       message: 'Your reply has been approved by an admin!',
       type: 'APPROVAL',
-      link: `/faqs/${faq._id}`
+      link: `/questions/${reply.queryId.toString()}`,
     }).catch(console.error);
 
-    // Notify the query author
+    // Notify the question author — goes to the FAQ entry
     if (query.createdBy) {
       notificationService.createNotification({
         userId: query.createdBy.toString(),
         title: 'Question Marked as FAQ',
         message: 'Your question has been marked as a frequently asked question!',
         type: 'FAQ',
-        link: `/faqs/${faq._id}`
+        link: `/faqs/${faq._id.toString()}`,
       }).catch(console.error);
     }
 
     return { faq, reply: approvedReply! };
   }
-async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {
-  const reply = await this.replyRepo.findById(replyId);
-  if (!reply) throw new NotFoundError('Reply not found');
 
-  const isOwner = reply.userId.toString() === userId.toString();
-  const isAdmin = userRole === 'admin';
+  async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {
+    const reply = await this.replyRepo.findById(replyId);
+    if (!reply) throw new NotFoundError('Reply not found');
 
-  if (!isOwner && !isAdmin) {
-    throw new ForbiddenError('You can only delete your own replies');
+    const isOwner = reply.userId.toString() === userId.toString();
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenError('You can only delete your own replies');
+    }
+
+    await this.replyRepo.deleteById(replyId);
   }
-
-  await this.replyRepo.deleteById(replyId);
-}
 }

@@ -34,4 +34,12 @@ export class NotificationService {
   async markAllAsRead(userId: string): Promise<void> {
     await Notification.updateMany({ userId, isRead: false }, { isRead: true });
   }
+
+  async deleteNotification(notificationId: string, userId: string): Promise<void> {
+    await Notification.findOneAndDelete({ _id: notificationId, userId });
+  }
+
+  async deleteAllNotifications(userId: string): Promise<void> {
+    await Notification.deleteMany({ userId });
+  }
 }

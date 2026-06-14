@@ -14,6 +14,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshCurrentUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,22 +24,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
+  const syncUser = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      if (user) setCurrentUser(user);
+    } catch (err) {
+      console.error('Failed to sync user:', err);
+    }
+  };
+
   useEffect(() => {
-    const syncUser = async () => {
-      try {
-        const user = await apiService.getCurrentUser();
-        if (user) setCurrentUser(user);
-      } catch (err) {
-        console.error('Failed to sync user:', err);
-      } finally {
-        setAuthLoading(false);
-      }
+    const init = async () => {
+      await syncUser();
+      setAuthLoading(false);
     };
-    syncUser();
+    init();
   }, []);
 
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
+
+  // Re-fetches the current user from backend — call after actions that change stats
+  const refreshCurrentUser = async () => {
+    await syncUser();
+  };
 
   const signIn = async (email: string, password: string) => {
     await apiService.signIn(email, password);
@@ -87,6 +96,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signInWithGoogle,
         forgotPassword,
         logout,
+        refreshCurrentUser,
       }}
     >
       {children}
