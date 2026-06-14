@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, X, Trash2 } from 'lucide-react';
 import { apiService } from '../utils/api';
 import { useSocket } from '../context/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,15 @@ interface Notification {
   createdAt: string;
 }
 
+
+
+const resolveLink = (notification: Notification): string | null => {
+  if (notification.type === 'BADGE') return '/profile';
+  if (notification.type === 'APPROVAL') return notification.link || null;
+  if (notification.type === 'FAQ') return notification.link || null;
+  return null;
+};
+
 export const NotificationPanel: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -23,65 +32,66 @@ export const NotificationPanel: React.FC = () => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const data = await apiService.getNotifications();
-      setNotifications(data);
-    };
-    fetchNotifications();
+    apiService.getNotifications().then(setNotifications);
   }, []);
 
   useEffect(() => {
     if (!socket) return;
-
-    const handleNewNotification = (notification: Notification) => {
-      setNotifications((prev) => [notification, ...prev]);
+    const handleNew = (notification: Notification) => {
+      setNotifications(prev => [notification, ...prev]);
     };
-
-    socket.on('new_notification', handleNewNotification);
-
-    return () => {
-      socket.off('new_notification', handleNewNotification);
-    };
+    socket.on('new_notification', handleNew);
+    return () => { socket.off('new_notification', handleNew); };
   }, [socket]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    e?.stopPropagation();
     await apiService.markNotificationAsRead(id);
     setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
   };
 
   const handleMarkAllAsRead = async () => {
+    if (unreadCount === 0) return;
     await apiService.markAllNotificationsAsRead();
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await apiService.deleteNotification(id);
+    setNotifications(prev => prev.filter(n => n._id !== id));
+  };
+
+  const handleClearAll = async () => {
+    if (notifications.length === 0) return;
+    await apiService.deleteAllNotifications();
+    setNotifications([]);
+  };
+
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead) {
-      handleMarkAsRead(notification._id);
-    }
-    if (notification.link) {
-      navigate(notification.link);
+    if (!notification.isRead) handleMarkAsRead(notification._id);
+    const link = resolveLink(notification);
+    if (link) {
+      navigate(link);
       setIsOpen(false);
     }
   };
 
   return (
     <div className="relative" ref={panelRef}>
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
       >
@@ -102,18 +112,31 @@ export const NotificationPanel: React.FC = () => {
             transition={{ duration: 0.2 }}
             className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
           >
+            {/* Header */}
             <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-semibold text-gray-800">Notifications</h3>
-              {unreadCount > 0 && (
-                <button 
+              <div className="flex items-center gap-2">
+                <button
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                  disabled={unreadCount === 0}
+                  title="Mark all as read"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
                   <Check className="w-3 h-3" /> Mark all read
                 </button>
-              )}
+                <span className="text-gray-200">|</span>
+                <button
+                  onClick={handleClearAll}
+                  disabled={notifications.length === 0}
+                  title="Clear all notifications"
+                  className="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                >
+                  <Trash2 className="w-3 h-3" /> Clear all
+                </button>
+              </div>
             </div>
 
+            {/* List */}
             <div className="max-h-96 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm">
@@ -121,23 +144,33 @@ export const NotificationPanel: React.FC = () => {
                 </div>
               ) : (
                 notifications.map(notification => (
-                  <div 
+                  <div
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!notification.isRead ? 'bg-blue-50/30' : ''}`}
+                    className={`group p-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors flex items-start gap-2 ${!notification.isRead ? 'bg-blue-50/30' : ''}`}
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
-                        {notification.title}
-                      </h4>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {notification.title}
+                        </h4>
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0 ml-1" />
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mb-1 line-clamp-2">{notification.message}</p>
+                      <p className="text-[10px] text-gray-400">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 mb-1 line-clamp-2">{notification.message}</p>
-                    <p className="text-[10px] text-gray-400">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </p>
+                    {/* Per-item dismiss button — visible on hover */}
+                    <button
+                      onClick={(e) => handleDelete(notification._id, e)}
+                      title="Dismiss"
+                      className="flex-shrink-0 mt-0.5 p-1 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 ))
               )}

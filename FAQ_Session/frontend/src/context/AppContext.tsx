@@ -4,7 +4,8 @@ import { useAuth } from './AuthContext';
 import { apiService } from '../utils/api';
 
 interface AppContextType {
-  questions: Question[];
+  questions: Question[];   // only queries (non-FAQ)
+  faqs: Question[];        // only FAQ entries
   loading: boolean;
   askQuestion: (title: string, description: string) => Promise<void>;
   postAnswer: (questionId: string, content: string) => Promise<void>;
@@ -23,33 +24,36 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-const { currentUser, openLoginModal, authLoading } = useAuth();
+  const { currentUser, openLoginModal, authLoading, refreshCurrentUser } = useAuth();
 
-const [questions, setQuestions] = useState<Question[]>([]);
-const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [faqs, setFaqs] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN';
 
-const loadBackendData = async () => {
-  setLoading(true);
-  try {
-    const [backendFaqs, backendQueries] = await Promise.all([
-      apiService.getFaqs(),
-      apiService.getQueries(isAdmin),
-    ]);
-    setQuestions([...backendFaqs, ...backendQueries]);
-  } catch (err) {
-    console.error('Failed to sync backend data:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const loadBackendData = async () => {
+    setLoading(true);
+    try {
+      const [backendFaqs, backendQueries] = await Promise.all([
+        apiService.getFaqs(),
+        apiService.getQueries(isAdmin),
+      ]);
+      // Keep FAQs and queries completely separate
+      setFaqs(backendFaqs);
+      setQuestions(backendQueries);
+    } catch (err) {
+      console.error('Failed to sync backend data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  if (authLoading) return;
-  loadBackendData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [authLoading, currentUser?.role]);
+  useEffect(() => {
+    if (authLoading) return;
+    loadBackendData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, currentUser?.role]);
 
   const checkAuth = (): boolean => {
     if (!currentUser) {
@@ -63,12 +67,12 @@ useEffect(() => {
     await loadBackendData();
   };
 
-// src/context/AppContext.tsx (relevant snippet, lines 65-72)
-// src/context/AppContext.tsx (relevant snippet, lines 65-72)
   const askQuestion = async (title: string, description: string) => {
     try {
       const newQuestion = await apiService.createQuery(title, description);
       setQuestions(prev => [newQuestion, ...prev]);
+      // Re-fetch user stats so Profile page questionsAsked increments immediately
+      await refreshCurrentUser();
     } catch (err) {
       console.error('Failed to raise query on backend:', err);
       throw err;
@@ -85,7 +89,6 @@ useEffect(() => {
           if (q.id === questionId) {
             const newStatus: QuestionStatus =
               q.status === 'OPEN' ? 'ANSWERED' : q.status;
-
             return {
               ...q,
               status: newStatus,
@@ -105,6 +108,8 @@ useEffect(() => {
     if (!checkAuth() || !currentUser) return;
     try {
       await apiService.approveReply(answerId);
+      // Full reload so the approved reply gets promoted to FAQ in the faqs list
+      // and the query section shows the correct locked state
       await loadBackendData();
     } catch (err) {
       console.error('Failed to accept/approve answer on backend:', err);
@@ -137,7 +142,7 @@ useEffect(() => {
           if (q.id === questionId) {
             const updatedAnswers = q.answers.filter(a => a.id !== replyId);
             const newStatus = updatedAnswers.length === 0 ? 'OPEN' : q.status;
-            return { ...q, answers: updatedAnswers, status: newStatus as any };
+            return { ...q, answers: updatedAnswers, status: newStatus as QuestionStatus };
           }
           return q;
         })
@@ -150,14 +155,15 @@ useEffect(() => {
 
   const deleteQuestion = async (questionId: string) => {
     try {
-      const q = questions.find(item => item.id === questionId);
-      if (!q) return;
-      if (q.isOfficial) {
+      // Check FAQs first, then queries
+      const isFaq = faqs.some(f => f.id === questionId);
+      if (isFaq) {
         await apiService.deleteFaq(questionId);
+        setFaqs(prev => prev.filter(f => f.id !== questionId));
       } else {
         await apiService.deleteQuery(questionId);
+        setQuestions(prev => prev.filter(q => q.id !== questionId));
       }
-      setQuestions(prev => prev.filter(item => item.id !== questionId));
     } catch (err) {
       console.error('Failed to delete FAQ/Query on backend:', err);
       throw err;
@@ -165,12 +171,11 @@ useEffect(() => {
   };
 
   const getStats = () => {
-    const totalFAQs = questions.filter(q => q.isOfficial).length;
+    const totalFAQs = faqs.length;
     const openQuestions = questions.filter(q => q.status === 'OPEN').length;
     const answeredQuestions = questions.filter(
       q => q.status === 'ANSWERED' || q.status === 'RESOLVED'
     ).length;
-
     return { totalFAQs, openQuestions, answeredQuestions };
   };
 
@@ -178,6 +183,7 @@ useEffect(() => {
     <AppContext.Provider
       value={{
         questions,
+        faqs,
         loading,
         askQuestion,
         postAnswer,

@@ -235,6 +235,12 @@ export const apiService = {
   async markAllNotificationsAsRead(): Promise<void> {
     await apiClient.patch('/notifications/read-all');
   },
+  async deleteNotification(id: string): Promise<void> {
+    await apiClient.delete(`/notifications/${id}`);
+  },
+  async deleteAllNotifications(): Promise<void> {
+    await apiClient.delete('/notifications/all');
+  },
 
   // --- Badges ---
   async getUserBadges(userId: string): Promise<any[]> {

@@ -33,4 +33,17 @@ export class NotificationController extends BaseController {
     await this.notificationService.markAllAsRead(userId);
     sendSuccess(res, null, Messages.SUCCESS);
   });
+
+  public deleteNotification = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    await this.notificationService.deleteNotification(id, userId);
+    sendSuccess(res, null, Messages.SUCCESS);
+  });
+
+  public deleteAllNotifications = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
+    await this.notificationService.deleteAllNotifications(userId);
+    sendSuccess(res, null, Messages.SUCCESS);
+  });
 }

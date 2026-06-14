@@ -31,6 +31,7 @@ function App() {
                 <Route path="faqs" element={<FAQPage />} />
                 <Route path="questions" element={<QuestionsFeed />} />
                 <Route path="questions/:id" element={<FAQDetailsPage />} />
+                <Route path="faqs/:id" element={<FAQDetailsPage />} />
                 <Route path="ask" element={<AskQuestion />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="admin" element={<AdminDashboard />} />
