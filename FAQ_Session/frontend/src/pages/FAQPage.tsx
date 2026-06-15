@@ -4,15 +4,13 @@ import { motion } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 import SearchBar from '../components/SearchBar';
 import FAQCard from '../components/FAQCard';
-import { EmptyState } from '../components/CommonWidgets';
+import { EmptyState, SkeletonCard } from '../components/CommonWidgets';
 
 export const FAQPage: React.FC = () => {
-  const { questions } = useAppContext();
+  const { faqs, loading } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get('search') || ''
-  );
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
   useEffect(() => {
     setSearchQuery(searchParams.get('search') || '');
@@ -28,16 +26,14 @@ export const FAQPage: React.FC = () => {
     setSearchParams(newParams);
   };
 
-  // 🔥 CORE FIX: Only show verified FAQs
-  const faqs = questions
-    .filter(q => q.isOfficial) // ✅ ONLY FAQs
+  const filteredFaqs = faqs
     .filter(q => {
-      const search = searchQuery.toLowerCase();
-
+      if (!searchQuery) return true;
+      const s = searchQuery.toLowerCase();
       return (
-        q.title.toLowerCase().includes(search) ||
-        q.description.toLowerCase().includes(search) ||
-        q.tags.some(t => t.toLowerCase().includes(search))
+        q.title.toLowerCase().includes(s) ||
+        q.description.toLowerCase().includes(s) ||
+        q.tags.some(t => t.toLowerCase().includes(s))
       );
     })
     .sort(
@@ -66,7 +62,6 @@ export const FAQPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search */}
       <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
         <SearchBar
           placeholder="Search FAQs..."
@@ -76,16 +71,20 @@ export const FAQPage: React.FC = () => {
       </div>
 
       {/* FAQs Grid */}
-      {faqs.length > 0 ? (
+      {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-          {faqs.map((faq, idx) => (
+          {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : filteredFaqs.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {filteredFaqs.map((faq, idx) => (
             <FAQCard key={faq.id} faq={faq} index={idx} />
           ))}
         </div>
       ) : (
         <EmptyState
-          title="No FAQs found"
-          description="Try a different keyword or clear the search."
+          title="No FAQs match your search"
+          description="Try typing a different keyword or clear the search to explore all resolved queries."
         />
       )}
     </motion.div>

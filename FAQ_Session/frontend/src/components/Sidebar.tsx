@@ -16,7 +16,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, authLoading } = useAuth();
 
   const menuItems = [
     { name: 'Home', path: '/', icon: Home, color: 'bg-brand-yellow' },
@@ -81,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ))}
 
           {/* Admin Panel (Role Based) */}
-          {currentUser && currentUser.role === 'ADMIN' && (
+          {!authLoading && currentUser && currentUser.role === 'ADMIN' && (
             <div className="pt-3 mt-3 border-t border-slate-200">
               <NavLink
                 to={adminItem.path}

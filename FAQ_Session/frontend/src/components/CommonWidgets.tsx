@@ -2,6 +2,36 @@ import React from 'react';
 import { ShieldCheck, Award, CheckCircle } from 'lucide-react';
 
 // ==========================================
+// 0. Skeleton primitives
+// ==========================================
+export const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`bg-slate-200/70 rounded-md animate-pulse ${className}`} />
+);
+
+export const SkeletonCard: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`p-5 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3 ${className}`}>
+    <Skeleton className="h-3 w-1/3" />
+    <Skeleton className="h-4 w-3/4" />
+    <Skeleton className="h-3 w-full" />
+    <Skeleton className="h-3 w-5/6" />
+  </div>
+);
+
+export const SkeletonRow: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`h-12 bg-slate-100 rounded-lg animate-pulse ${className}`} />
+);
+
+export const SkeletonStatsCard: React.FC = () => (
+  <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-between">
+    <div className="space-y-2">
+      <Skeleton className="h-3 w-20" />
+      <Skeleton className="h-6 w-12" />
+    </div>
+    <Skeleton className="w-11 h-11 rounded-full" />
+  </div>
+);
+
+// ==========================================
 // 1. StatusBadge
 // ==========================================
 interface StatusBadgeProps {

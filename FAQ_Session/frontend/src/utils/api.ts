@@ -11,13 +11,42 @@ export const apiClient = axios.create({
   },
 });
 
-// Ensure JSON content-type on every request
 apiClient.interceptors.request.use((config) => {
   if (config.data && typeof config.data === 'object') {
     config.headers['Content-Type'] = 'application/json';
   }
   return config;
 });
+
+export const ApiErrorCode = {
+  STALE_ROLE_SESSION: 'STALE_ROLE_SESSION',
+  EMAIL_VERIFICATION_REQUIRED: 'EMAIL_VERIFICATION_REQUIRED',
+} as const;
+
+export const getApiErrorCode = (err: unknown): string | undefined => {
+  if (!axios.isAxiosError(err)) return undefined;
+  return err.response?.data?.details?.code;
+};
+
+export const getApiErrorMessage = (err: unknown): string | undefined => {
+  if (!axios.isAxiosError(err)) return undefined;
+  return err.response?.data?.message;
+};
+
+export const STALE_SESSION_EVENT = 'auth:stale-session';
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 403) {
+      const code = error.response.data?.details?.code;
+      if (code === ApiErrorCode.STALE_ROLE_SESSION) {
+        window.dispatchEvent(new CustomEvent(STALE_SESSION_EVENT));
+      }
+    }
+    return Promise.reject(error);
+  },
+);
 
 interface ApiResponse<T> {
   status: string;
@@ -35,12 +64,10 @@ interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Map backend role strings to frontend UserRole
-const mapRole = (role?: string): 'ADMIN' | 'INTERN' | 'MENTOR' => {
+const mapRole = (role?: string): 'ADMIN' | 'INTERN' => {
   if (!role) return 'INTERN';
   const r = role.toLowerCase();
   if (r === 'admin') return 'ADMIN';
-  if (r === 'mentor') return 'MENTOR';
   return 'INTERN';
 };
 
@@ -53,6 +80,7 @@ export const mapFaqToQuestion = (faq: any): Question => ({
   isAccepted: true,
   status: 'RESOLVED',
   createdAt: faq.createdAt || new Date().toISOString(),
+  linkedFaqId: faq._id,
   author: {
     id: faq.createdBy?._id || faq.createdBy || 'system',
     name: faq.createdBy?.name || 'Vicharanashala Lab',
@@ -81,7 +109,11 @@ export const mapFaqToQuestion = (faq: any): Question => ({
   ],
 });
 
-export const mapQueryToQuestion = (query: any, replies: any[] = []): Question => {
+export const mapQueryToQuestion = (
+  query: any,
+  replies: any[] = [],
+  linkedFaqId?: string | null,
+): Question => {
   const mappedAnswers: Answer[] = replies.map((rep) => ({
     id: rep._id,
     questionId: query._id,
@@ -94,7 +126,7 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
       badges: [],
     },
     content: rep.content,
-    isOfficial: rep.userId?.role === 'admin' || rep.userId?.role === 'mentor',
+    isOfficial: rep.userId?.role === 'admin',
     isAccepted: rep.isApproved,
     createdAt: rep.createdAt,
   }));
@@ -116,6 +148,7 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
     isAccepted: hasAccepted,
     status: hasAccepted ? 'RESOLVED' : mapQueryStatus(query.status),
     createdAt: query.createdAt,
+    linkedFaqId: linkedFaqId ?? null,
     author: {
       id: query.createdBy?._id || query.createdBy || 'anonymous',
       name: query.createdBy?.name || 'Anonymous',
@@ -136,17 +169,29 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
 
 export const apiService = {
   // --- FAQs ---
-  async getFaqs(page = 1, limit = 100): Promise<Question[]> {
+  async getFaqs(page = 1, limit = 100): Promise<{ questions: Question[]; sourceQueryMap: Record<string, string> }> {
     try {
       const response = await apiClient.get<PaginatedResponse<any>>(`/faqs?page=${page}&limit=${limit}`);
-      return (response.data.data || []).map(mapFaqToQuestion);
+      const rawFaqs = response.data.data || [];
+      // Build a map of sourceQueryId -> faqId for queries to check if they are promoted
+      const sourceQueryMap: Record<string, string> = {};
+      rawFaqs.forEach((faq: any) => {
+        if (faq.sourceQueryId) {
+          sourceQueryMap[String(faq.sourceQueryId)] = String(faq._id);
+        }
+      });
+      return { questions: rawFaqs.map(mapFaqToQuestion), sourceQueryMap };
     } catch (err) {
       console.error('Failed to get FAQs:', err);
-      return [];
+      return { questions: [], sourceQueryMap: {} };
     }
   },
   async createFaq(question: string, answer: string): Promise<Question> {
     const response = await apiClient.post<ApiResponse<any>>('/faqs', { question, answer });
+    return mapFaqToQuestion(response.data.data);
+  },
+  async promoteToFaq(queryId: string): Promise<Question> {
+    const response = await apiClient.post<ApiResponse<any>>(`/faqs/promote/${queryId}`);
     return mapFaqToQuestion(response.data.data);
   },
   async updateFaq(id: string, question: string, answer: string): Promise<Question> {
@@ -158,20 +203,20 @@ export const apiService = {
   },
 
   // --- Queries ---
-  async getQueries(isAdmin = false): Promise<Question[]> {
+  async getQueries(sourceQueryMap: Record<string, string> = {}): Promise<Question[]> {
     try {
       const response = await apiClient.get<PaginatedResponse<any>>('/queries?limit=100');
       const queries = response.data.data || [];
 
-      // Always fetch replies for all queries so users can see answered ones
       return await Promise.all(
         queries.map(async (q: any) => {
           try {
             const repsResponse = await apiClient.get<ApiResponse<any[]>>(`/queries/${q._id}/replies`);
-            return mapQueryToQuestion(q, repsResponse.data.data || []);
+            const linkedFaqId = sourceQueryMap[String(q._id)] ?? null;
+            return mapQueryToQuestion(q, repsResponse.data.data || [], linkedFaqId);
           } catch {
-            // If replies fetch fails (e.g. non-admin on restricted endpoint), return query without replies
-            return mapQueryToQuestion(q, []);
+            const linkedFaqId = sourceQueryMap[String(q._id)] ?? null;
+            return mapQueryToQuestion(q, [], linkedFaqId);
           }
         })
       );
@@ -227,6 +272,28 @@ export const apiService = {
     await apiClient.post('/chat/chatbot/clear', { sessionId });
   },
 
+  // --- Notifications ---
+  async getNotifications(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>('/notifications');
+      return response.data.data || [];
+    } catch {
+      return [];
+    }
+  },
+  async markNotificationAsRead(id: string): Promise<void> {
+    await apiClient.patch(`/notifications/${id}/read`);
+  },
+  async markAllNotificationsAsRead(): Promise<void> {
+    await apiClient.patch('/notifications/read-all');
+  },
+  async deleteNotification(id: string): Promise<void> {
+    await apiClient.delete(`/notifications/${id}`);
+  },
+  async deleteAllNotifications(): Promise<void> {
+    await apiClient.delete('/notifications/all');
+  },
+
   // --- Badges ---
   async getUserBadges(userId: string): Promise<any[]> {
     try {
@@ -251,6 +318,20 @@ export const apiService = {
     } catch {
       return [];
     }
+  },
+
+  // --- Admin: user management ---
+  async getUsers(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>('/admin/users');
+      return response.data.data || [];
+    } catch (err) {
+      console.error('Failed to get users:', err);
+      return [];
+    }
+  },
+  async updateUserRole(userId: string, role: 'student' | 'admin'): Promise<void> {
+    await apiClient.patch(`/admin/users/${userId}/role`, { role });
   },
 
   // --- Auth ---
@@ -281,6 +362,9 @@ export const apiService = {
   async signOut(): Promise<void> {
     await apiClient.post('/auth/sign-out');
   },
+  async resendVerificationEmail(email: string): Promise<void> {
+    await apiClient.post('/auth/send-verification-email', { email });
+  },
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await apiClient.get<ApiResponse<any>>('/auth/me');
@@ -299,7 +383,9 @@ export const apiService = {
       return {
         id: userId,
         name: dbUser.name || 'User',
+        email: dbUser.email,
         role: mapRole(dbUser.role),
+        emailVerified: !!dbUser.emailVerified,
         avatar: dbUser.image || '🍒',
         stats: {
           questionsAsked: statsData.totalQueries,

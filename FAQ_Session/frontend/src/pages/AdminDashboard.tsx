@@ -1,17 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, HelpCircle, ShieldAlert, Award, Star, Trash2, Flag, AlertOctagon } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  HelpCircle, 
+  ShieldAlert, 
+  Award, 
+  Star, 
+  Trash2, 
+  Flag, 
+  AlertOctagon,
+  Users,
+  ShieldOff,
+  Loader2,
+  ExternalLink,
+  CheckCircle2
+} from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge, EmptyState } from '../components/CommonWidgets';
+import { useToast } from '../context/ToastContext';
+import { apiService } from '../utils/api';
+import { StatusBadge, EmptyState, Skeleton, SkeletonStatsCard, SkeletonCard } from '../components/CommonWidgets';
 import { Question } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { 
     questions, 
-    convertToFAQ, 
+    faqs,
+    promoteToFaq, 
     deleteQuestion, 
     getStats,
     getReportedQueries,
@@ -20,13 +37,14 @@ export const AdminDashboard: React.FC = () => {
     penalizeQuery,
     deleteReportedQuery
   } = useAppContext();
-  const { currentUser } = useAuth();
+  const { currentUser, authLoading } = useAuth();
+  const { showToast } = useToast();
 
   const stats = getStats();
-  const [reportedQueries, setReportedQueries] = React.useState<Question[]>([]);
-  const [loadingReported, setLoadingReported] = React.useState(true);
+  const [reportedQueries, setReportedQueries] = useState<Question[]>([]);
+  const [loadingReported, setLoadingReported] = useState(true);
 
-  const fetchReports = React.useCallback(async () => {
+  const fetchReports = useCallback(async () => {
     setLoadingReported(true);
     try {
       const data = await getReportedQueries();
@@ -38,25 +56,102 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [getReportedQueries]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentUser?.role === 'ADMIN') {
       fetchReports();
     }
   }, [currentUser, fetchReports]);
+
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [promotingId, setPromotingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'ADMIN') return;
+    let active = true;
+    (async () => {
+      setUsersLoading(true);
+      try {
+        const data = await apiService.getUsers();
+        if (active) {
+          setUsers(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      } finally {
+        if (active) {
+          setUsersLoading(false);
+        }
+      }
+    })();
+    return () => { active = false; };
+  }, [currentUser]);
+
+  const handleRoleToggle = async (user: any) => {
+    const targetId = user._id || user.id;
+    const nextRole = user.role === 'admin' ? 'student' : 'admin';
+
+    if (currentUser && (currentUser.id === targetId)) {
+      showToast("You can't change your own role.", 'error');
+      return;
+    }
+
+    setUpdatingUserId(targetId);
+    try {
+      await apiService.updateUserRole(targetId, nextRole);
+      setUsers(prev => prev.map(u => (u._id || u.id) === targetId ? { ...u, role: nextRole } : u));
+      showToast(
+        nextRole === 'admin'
+          ? `${user.name} is now an admin. Their active sessions were revoked.`
+          : `${user.name} was demoted to student. Their active sessions were revoked immediately.`,
+        'success',
+      );
+    } catch (err) {
+      showToast('Failed to update this user\'s role. Please try again.', 'error');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handlePromoteToFaq = async (questionId: string) => {
+    setPromotingId(questionId);
+    try {
+      await promoteToFaq(questionId);
+    } finally {
+      setPromotingId(null);
+    }
+  };
+
+
+  if (authLoading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <SkeletonStatsCard /><SkeletonStatsCard /><SkeletonStatsCard />
+        </div>
+        <div className="space-y-4"><SkeletonCard /><SkeletonCard /></div>
+      </div>
+    );
+  }
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (
       <div className="max-w-md mx-auto py-12 text-center space-y-4">
         <EmptyState
           title="Access Restricted 🔐"
-          description="Only registered Admin profiles are allowed to access moderation queues and convert questions into official FAQs."
+          description="Only registered Admin profiles are allowed to access moderation queues."
         />
       </div>
     );
   }
 
-  // Queries that aren't yet FAQs and aren't resolved
-  const openModerationQueue = questions.filter(q => !q.isOfficial && q.status !== 'RESOLVED');
+  // Moderation queue: all queries that are not yet resolved (open or answered)
+  const openModerationQueue = questions.filter(q => q.status !== 'RESOLVED');
+
+  // Resolved queries: show promote button only if no FAQ linked yet
+  const resolvedQueries = questions.filter(q => q.status === 'RESOLVED');
 
   const handleIgnore = async (id: string) => {
     try {
@@ -104,25 +199,19 @@ export const AdminDashboard: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="space-y-8"
     >
-      {/* Header Panel */}
+      {/* Header */}
       <div className="flex items-center gap-3 p-5 border border-slate-200 bg-white rounded-2xl shadow-sm text-slate-800 relative overflow-hidden z-10">
         <div className="absolute right-[-10px] top-[-10px] rotate-12 text-slate-100 select-none -z-10">
           <ShieldCheck size={90} />
         </div>
-        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-red-50 text-red-600 text-xl font-bold">
-          🛡️
-        </div>
+        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-red-50 text-red-600 text-xl font-bold">🛡️</div>
         <div>
-          <h1 className="font-semibold text-xl tracking-tight text-slate-900 font-sans">
-            Admin Panel &amp; Moderation
-          </h1>
-          <p className="text-xs font-normal text-slate-500 mt-1">
-            Resolve queries, moderate forum, and endorse official FAQs.
-          </p>
+          <h1 className="font-semibold text-xl tracking-tight text-slate-900 font-sans">Admin Panel &amp; Moderation</h1>
+          <p className="text-xs font-normal text-slate-500 mt-1">Approve replies, promote resolved queries to FAQ, and manage the knowledge base.</p>
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="p-5 border border-slate-200 bg-white rounded-xl shadow-sm">
           <p className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider">Verified FAQs</p>
@@ -138,24 +227,24 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Moderation Queue */}
+      {/* Moderation Queue — open/answered queries needing reply approval */}
       <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
         <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
           <HelpCircle size={18} className="text-indigo-500" />
-          <span>Forum Moderation Queue ({openModerationQueue.length})</span>
+          <span>Moderation Queue ({openModerationQueue.length})</span>
         </h2>
+        <p className="text-[11px] text-slate-400 -mt-2 leading-relaxed">
+          Open queries waiting for a reply to be approved. Click a query title to review replies and approve one.
+        </p>
 
         {openModerationQueue.length > 0 ? (
           <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-            {openModerationQueue.map((q) => (
-              <div
-                key={q.id}
-                className="p-4 border border-slate-100 bg-slate-50/40 rounded-xl flex flex-col gap-3 hover:bg-slate-50 transition-colors"
-              >
+            {openModerationQueue.map(q => (
+              <div key={q.id} className="p-4 border border-slate-100 bg-slate-50/40 rounded-xl flex flex-col gap-3 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <StatusBadge status={q.status} />
+                  <span className="text-[10px] text-slate-400">{q.answers.length} {q.answers.length === 1 ? 'reply' : 'replies'}</span>
                 </div>
-
                 <div>
                   <h3
                     onClick={() => navigate(`/questions/${q.id}`)}
@@ -163,17 +252,14 @@ export const AdminDashboard: React.FC = () => {
                   >
                     {q.title}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {q.description}
-                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{q.description}</p>
                 </div>
-
                 <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => deleteQuestion(q.id)}
                       className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors cursor-pointer"
-                      title="Delete Question"
+                      title="Delete query"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -181,26 +267,86 @@ export const AdminDashboard: React.FC = () => {
                       By: <span className="font-semibold text-slate-700">{q.author.name}</span>
                     </span>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400">{q.answers.length} replies</span>
-                    {q.answers.length > 0 && (
-                      <button
-                        onClick={() => convertToFAQ(q.id)}
-                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[9px] font-semibold uppercase transition-colors flex items-center gap-0.5 border border-transparent shadow-sm cursor-pointer"
-                      >
-                        <Award size={9} />
-                        <span>Convert to FAQ</span>
-                      </button>
-                    )}
-                  </div>
+                  {q.answers.length > 0 && (
+                    <button
+                      onClick={() => navigate(`/questions/${q.id}`)}
+                      className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9px] font-semibold uppercase transition-colors flex items-center gap-0.5 border border-transparent shadow-sm cursor-pointer"
+                    >
+                      <CheckCircle2 size={9} /><span>Review &amp; Approve</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
-            All active forum discussions are clean and moderated.
+            All queries have been reviewed.
+          </div>
+        )}
+      </div>
+
+      {/* Resolved Queries — promote to FAQ */}
+      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
+        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
+          <Award size={18} className="text-blue-500" />
+          <span>Resolved Queries ({resolvedQueries.length})</span>
+        </h2>
+        <p className="text-[11px] text-slate-400 -mt-2 leading-relaxed">
+          Resolved queries have an approved reply. Promote to FAQ to add the answer to the official knowledge base.
+        </p>
+
+        {resolvedQueries.length > 0 ? (
+          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+            {resolvedQueries.map(q => {
+              const isPromoted = !!q.linkedFaqId;
+              const isPromoting = promotingId === q.id;
+              return (
+                <div key={q.id} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <span
+                      onClick={() => navigate(`/questions/${q.id}`)}
+                      className="text-xs font-semibold text-slate-800 hover:text-blue-600 cursor-pointer"
+                    >
+                      {q.title}
+                    </span>
+                    {isPromoted && (
+                      <p className="text-[10px] text-emerald-600 mt-0.5">Promoted to FAQ</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isPromoted ? (
+                      <button
+                        onClick={() => navigate(`/faqs/${q.linkedFaqId}`)}
+                        className="px-2.5 py-1 bg-white text-emerald-700 border border-emerald-200 rounded text-[9px] font-semibold uppercase transition-colors flex items-center gap-0.5 hover:bg-emerald-50 cursor-pointer"
+                      >
+                        <ExternalLink size={9} /><span>View FAQ</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handlePromoteToFaq(q.id)}
+                        disabled={isPromoting}
+                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-[9px] font-semibold uppercase transition-colors flex items-center gap-0.5 border border-transparent shadow-sm cursor-pointer"
+                      >
+                        {isPromoting ? <Loader2 size={9} className="animate-spin" /> : <Award size={9} />}
+                        <span>{isPromoting ? 'Promoting...' : 'Promote to FAQ'}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteQuestion(q.id)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors cursor-pointer"
+                      title="Delete query"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+            No resolved queries yet.
           </div>
         )}
       </div>
@@ -291,36 +437,115 @@ export const AdminDashboard: React.FC = () => {
       <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
         <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
           <ShieldAlert size={18} className="text-rose-500" />
-          <span>Manage Verified FAQs ({stats.totalFAQs})</span>
+          <span>Manage Verified FAQs ({faqs.length})</span>
         </h2>
+        <p className="text-[11px] text-slate-400 -mt-2 leading-relaxed">
+          Deleting an FAQ does not delete the source query — it can be re-promoted if needed.
+        </p>
 
-        <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-          {questions.filter(q => q.isOfficial).map((q) => (
-            <div key={q.id} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <span
-                  onClick={() => navigate(`/questions/${q.id}`)}
-                  className="text-xs font-semibold text-slate-800 hover:text-blue-600 cursor-pointer"
-                >
-                  {q.title}
-                </span>
+        {faqs.length > 0 ? (
+          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+            {faqs.map(q => (
+              <div key={q.id} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span
+                    onClick={() => navigate(`/faqs/${q.id}`)}
+                    className="text-xs font-semibold text-slate-800 hover:text-blue-600 cursor-pointer"
+                  >
+                    {q.title}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                    <Star size={8} className="fill-emerald-600" />Verified
+                  </span>
+                  <button
+                    onClick={() => deleteQuestion(q.id)}
+                    className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors cursor-pointer"
+                    title="Delete FAQ"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                  <Star size={8} className="fill-emerald-600" />
-                  Verified
-                </span>
-                <button
-                  onClick={() => deleteQuestion(q.id)}
-                  className="p-1.5 text-rose-600 hover:bg-rose-50 border border-slate-100 hover:border-rose-200 rounded transition-colors"
-                  title="Delete FAQ"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+            No verified FAQs yet. Promote a resolved query above to create one.
+          </div>
+        )}
+      </div>
+
+      {/* User Management */}
+      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
+        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
+          <Users size={18} className="text-indigo-500" />
+          <span>User Roles ({users.length})</span>
+        </h2>
+        <p className="text-[11px] text-slate-400 leading-relaxed -mt-2">
+          Changing a role revokes that user's active sessions immediately so promotions and demotions take effect right away.
+        </p>
+
+        {usersLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        ) : users.length > 0 ? (
+          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+            {users.map(u => {
+              const targetId = u._id || u.id;
+              const isSelf = currentUser?.id === targetId;
+              const isUpdating = updatingUserId === targetId;
+              const isAdminUser = u.role === 'admin';
+              return (
+                <div key={targetId} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-800 truncate">{u.name}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-semibold leading-none ${
+                        isAdminUser ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        {u.role}
+                      </span>
+                      {isAdminUser && !u.emailVerified && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded uppercase font-semibold leading-none bg-amber-50 text-amber-700 border border-amber-200">
+                          Email unverified
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{u.email}</p>
+                  </div>
+                  <button
+                    onClick={() => handleRoleToggle(u)}
+                    disabled={isSelf || isUpdating}
+                    title={isSelf ? "You can't change your own role" : isAdminUser ? 'Demote to student' : 'Promote to admin'}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded text-[9px] font-semibold uppercase transition-colors border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                      isAdminUser
+                        ? 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+                        : 'bg-blue-600 text-white border-transparent hover:bg-blue-700'
+                    }`}
+                  >
+                    {isUpdating ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : isAdminUser ? (
+                      <ShieldOff size={10} />
+                    ) : (
+                      <ShieldCheck size={10} />
+                    )}
+                    <span>{isAdminUser ? 'Demote' : 'Promote'}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+            No users found.
+          </div>
+        )}
       </div>
     </motion.div>
   );

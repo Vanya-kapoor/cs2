@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'INTERN' | 'MENTOR';
+export type UserRole = 'ADMIN' | 'INTERN';
 
 export interface UserStats {
   questionsAsked: number;
@@ -10,7 +10,9 @@ export interface UserStats {
 export interface User {
   id: string;
   name: string;
+  email?: string;
   role: UserRole;
+  emailVerified?: boolean;
   avatar: string;
   stats: UserStats;
   badges: string[];
@@ -45,4 +47,9 @@ export interface Question {
   isReported?: boolean;
   needsAdminReview?: boolean;
   isHidden?: boolean;
+  /**
+   * Set on queries that have been promoted to FAQ.
+   * Used by the admin dashboard to show "View FAQ" instead of "Promote to FAQ".
+   */
+  linkedFaqId?: string | null;
 }

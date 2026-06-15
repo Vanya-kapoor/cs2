@@ -52,9 +52,16 @@ const createAuth = () => {
         user: { name?: string; email: string };
         url: string;
       }) => {
+        // better-auth's GET /verify-email endpoint redirects to `callbackURL`
+        // after verifying. If none is set, it falls back to `/` on the
+        // backend itself, which has no route — hence "Route not found: GET /".
+        // Force the redirect to land on the frontend instead.
+        const redirectUrl = new URL(url);
+        redirectUrl.searchParams.set('callbackURL', `${env.CORS_ORIGIN}/profile`);
+
         await sendEmail({
           to: user.email,
-          ...emailVerificationTemplate(user.name || 'there', url),
+          ...emailVerificationTemplate(user.name || 'there', redirectUrl.toString()),
         });
       },
     },
@@ -82,8 +89,12 @@ const createAuth = () => {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
       cookieCache: {
+        // Kept short so role/email-verification changes made directly in the
+        // DB (or via admin actions) are reflected in the session within
+        // seconds instead of being masked by a stale cached cookie for up
+        // to 5 minutes.
         enabled: true,
-        maxAge: 60 * 5,
+        maxAge: 30,
       },
     },
 

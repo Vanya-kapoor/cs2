@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { MessageSquare, Plus } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import QuestionCard from "../components/QuestionCard";
-import { EmptyState } from "../components/CommonWidgets";
+import { EmptyState, SkeletonCard } from "../components/CommonWidgets";
 
 export const QuestionsFeed: React.FC = () => {
   const navigate = useNavigate();
-  const { questions } = useAppContext();
+  const { questions, loading } = useAppContext();
   const [filter, setFilter] = useState<"newest" | "unanswered" | "answered">(
     "newest",
   );
@@ -84,7 +84,11 @@ export const QuestionsFeed: React.FC = () => {
       </div>
 
       {/* Feed list */}
-      {sortedQuestions.length > 0 ? (
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : sortedQuestions.length > 0 ? (
         <div className="space-y-4">
           {sortedQuestions.map((question, idx) => (
             <QuestionCard key={question.id} question={question} index={idx} />

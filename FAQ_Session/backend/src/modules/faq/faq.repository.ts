@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { BaseRepository } from '../../core/base/BaseRepository';
 import { FaqModel } from './faq.model';
 import { IFaq, IVectorSearchResult } from './faq.interface';
@@ -20,6 +21,18 @@ export class FaqRepository extends BaseRepository<IFaq> {
         .exec();
     } catch (err) {
       throw new DatabaseError(`Failed to paginate FAQs: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * Returns the FAQ linked to a specific query, or null if none exists.
+   * Used to determine whether "Promote to FAQ" button should be shown.
+   */
+  async findBySourceQueryId(queryId: string | Types.ObjectId): Promise<IFaq | null> {
+    try {
+      return await FaqModel.findOne({ sourceQueryId: queryId }).exec();
+    } catch (err) {
+      throw new DatabaseError(`Failed to find FAQ by source query: ${(err as Error).message}`);
     }
   }
 

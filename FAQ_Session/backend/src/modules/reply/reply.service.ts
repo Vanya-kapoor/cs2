@@ -5,7 +5,6 @@ import { QueryRepository } from '../query/query.repository';
 import { FaqRepository } from '../faq/faq.repository';
 import { EmbeddingService } from '../faq/embedding.service';
 import { IReply } from './reply.interface';
-import { IFaq } from '../faq/faq.interface';
 import { NotFoundError, BadRequestError } from '../../core/errors';
 import { Messages } from '../../core/constants/messages';
 import { CreateReplyDtoType } from './reply.dto';
@@ -13,11 +12,7 @@ import { BadgeService } from '../badge/badge.service';
 import { BadgeRepository } from '../badge/badge.repository';
 import { UserRepository } from '../user/user.repository';
 import { ForbiddenError } from '../../core/errors';
-
-export interface ApproveReplyResult {
-  faq: IFaq;
-  reply: IReply;
-}
+import { NotificationService } from '../notification/notification.service';
 
 export class ReplyService extends BaseService {
   constructor(
@@ -47,22 +42,33 @@ export class ReplyService extends BaseService {
       throw new BadRequestError(Messages.QUERY_ALREADY_RESOLVED);
     }
 
-    return this.replyRepo.create({
+    const reply = await this.replyRepo.create({
       queryId: new Types.ObjectId(queryId),
       userId,
       content: dto.content,
       isApproved: false,
     });
+
+    const notificationService = new NotificationService();
+    if (query.createdBy && query.createdBy.toString() !== userId.toString()) {
+      notificationService.createNotification({
+        userId: query.createdBy.toString(),
+        title: 'New Reply',
+        message: 'Someone has replied to your question.',
+        type: 'REPLY',
+        link: `/questions/${queryId}`,
+      }).catch(console.error);
+    }
+
+    return reply;
   }
 
   /**
-   * Admin approves a reply:
-   *  1. Marks the reply as approved
-   *  2. Generates embedding from query title + reply content
-   *  3. Creates an FAQ entry linking back to the source query & reply
-   *  4. Marks the parent query as resolved
+   * Approves a reply and marks the query as resolved.
+   * Does NOT create a FAQ — that is a separate explicit admin action
+   * via POST /faqs/promote/:queryId
    */
-  async approveReply(replyId: string, adminId: Types.ObjectId): Promise<ApproveReplyResult> {
+  async approveReply(replyId: string, adminId: Types.ObjectId): Promise<IReply> {
     const reply = await this.replyRepo.findById(replyId);
     if (!reply) throw new NotFoundError(Messages.REPLY_NOT_FOUND);
 
@@ -73,53 +79,57 @@ export class ReplyService extends BaseService {
     const query = await this.queryRepo.findById(reply.queryId.toString());
     if (!query) throw new NotFoundError(Messages.QUERY_NOT_FOUND);
 
-    // Generate embedding from query title + approved reply content
-    const embeddingText = this.embeddingService.buildEmbeddingText(
-      query.title,
-      reply.content,
-    );
-    const embedding = await this.embeddingService.createEmbedding(embeddingText);
-
-    // Create the FAQ entry
-    const faq = await this.faqRepo.create({
-      question: query.title,
-      answer: reply.content,
-      embedding,
-      createdBy: adminId,
-      approvedBy: adminId,
-      sourceQueryId: query._id as Types.ObjectId,
-      approvedReplyId: reply._id as Types.ObjectId,
-    });
-
-    // Mark reply as approved & query as resolved
     const approvedReply = await this.replyRepo.markApproved(replyId);
     await this.queryRepo.markResolved(reply.queryId.toString());
 
-    // Badge Evaluation
+    // Evaluate contribution badges for the replier
     const badgeService = new BadgeService(
       new BadgeRepository(),
       new UserRepository(),
       this.replyRepo,
-      this.queryRepo
+      this.queryRepo,
     );
     badgeService.evaluateContributionBadges(reply.userId.toString()).catch(console.error);
     if (query.createdBy) {
       badgeService.evaluateResolutionBadges(query.createdBy.toString()).catch(console.error);
     }
 
-    return { faq, reply: approvedReply! };
+    const notificationService = new NotificationService();
+
+    // Notify the replier
+    notificationService.createNotification({
+      userId: reply.userId.toString(),
+      title: 'Reply Approved',
+      message: 'Your reply has been approved by an admin!',
+      type: 'APPROVAL',
+      link: `/questions/${reply.queryId.toString()}`,
+    }).catch(console.error);
+
+    // Notify the question author that their query is resolved
+    if (query.createdBy) {
+      notificationService.createNotification({
+        userId: query.createdBy.toString(),
+        title: 'Query Resolved',
+        message: 'Your question has been answered and marked as resolved.',
+        type: 'APPROVAL',
+        link: `/questions/${reply.queryId.toString()}`,
+      }).catch(console.error);
+    }
+
+    return approvedReply!;
   }
-async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {
-  const reply = await this.replyRepo.findById(replyId);
-  if (!reply) throw new NotFoundError('Reply not found');
 
-  const isOwner = reply.userId.toString() === userId.toString();
-  const isAdmin = userRole === 'admin';
+  async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {
+    const reply = await this.replyRepo.findById(replyId);
+    if (!reply) throw new NotFoundError('Reply not found');
 
-  if (!isOwner && !isAdmin) {
-    throw new ForbiddenError('You can only delete your own replies');
+    const isOwner = reply.userId.toString() === userId.toString();
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenError('You can only delete your own replies');
+    }
+
+    await this.replyRepo.deleteById(replyId);
   }
-
-  await this.replyRepo.deleteById(replyId);
-}
 }

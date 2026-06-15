@@ -19,7 +19,7 @@ export const FAQCard: React.FC<FAQCardProps> = ({ faq, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.03 }}
       whileHover={{ y: -2 }}
-      onClick={() => navigate(`/questions/${faq.id}`)}
+      onClick={() => navigate(`/faqs/${faq.id}`)}
       className="relative p-5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[200px]"
     >
       <div>

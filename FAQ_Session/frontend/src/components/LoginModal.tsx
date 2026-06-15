@@ -29,7 +29,7 @@ const FieldError: React.FC<{ message?: string }> = ({ message }) =>
   message ? <p className="text-xs text-red-500 mt-1 pl-1">{message}</p> : null;
 
 export const LoginModal: React.FC = () => {
-  const { isLoginModalOpen, closeLoginModal, signIn, signUp, signInWithGoogle, forgotPassword } = useAuth();
+  const { isLoginModalOpen, closeLoginModal, signIn, signUp, signInWithGoogle, forgotPassword, sessionExpiredNotice, dismissSessionExpiredNotice } = useAuth();
 
   const [view, setView] = useState<View>('signin');
   const [apiError, setApiError] = useState('');
@@ -50,6 +50,7 @@ export const LoginModal: React.FC = () => {
     forgotForm.reset();
     setApiError('');
     setView('signin');
+    dismissSessionExpiredNotice();
     closeLoginModal();
   };
 
@@ -147,6 +148,11 @@ export const LoginModal: React.FC = () => {
               {/* ── SIGN IN ── */}
               {view === 'signin' && (
                 <>
+                  {sessionExpiredNotice && (
+                    <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs leading-relaxed">
+                      Your session is out of date — your account permissions changed. Please sign in again to continue.
+                    </div>
+                  )}
                   <div className="mb-5">
                     <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-lg mb-3">🔑</div>
                     <h2 className="text-lg font-bold text-slate-800">Welcome back</h2>

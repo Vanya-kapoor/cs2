@@ -36,7 +36,6 @@ export class ReplyController extends BaseController {
 
   protected registerRoutes(): void {
     // Authenticated users can reply to any open query
-    // Route: POST /api/queries/:queryId/replies
     this.router.post(
       "/queries/:queryId/replies",
       requireAuth,
@@ -44,22 +43,21 @@ export class ReplyController extends BaseController {
       asyncHandler(this.addReply.bind(this)),
     );
 
-    //list all replies for a query
-    // Route: GET /api/queries/:queryId/replies
+    // List all replies for a query
     this.router.get(
       "/queries/:queryId/replies",
       asyncHandler(this.getReplies.bind(this)),
     );
 
-    // Admin – approve a reply → creates FAQ entry
-    // Route: POST /api/replies/:id/approve
+    // Admin – approve a reply (marks query resolved; does NOT auto-create FAQ)
     this.router.post(
       "/replies/:id/approve",
       requireAuth,
       requireRole(Roles.ADMIN),
       asyncHandler(this.approveReply.bind(this)),
     );
-    //Route: DELETE /api/replies/:id
+
+    // Delete a reply (owner or admin)
     this.router.delete(
       "/replies/:id",
       requireAuth,
@@ -123,16 +121,17 @@ export class ReplyController extends BaseController {
   private async approveReply(req: Request, res: Response): Promise<void> {
     const replyId = String(req.params["id"]);
     const adminId = new Types.ObjectId(req.user!.id);
-    const result = await this.replyService.approveReply(replyId, adminId);
-    sendSuccess(res, result, Messages.REPLY_APPROVED);
+    const reply = await this.replyService.approveReply(replyId, adminId);
+    sendSuccess(res, reply, Messages.REPLY_APPROVED);
   }
+
   private async deleteReply(req: Request, res: Response): Promise<void> {
-  const replyId = String(req.params['id']);
-  const userId = new Types.ObjectId(req.user!.id);
-  const userRole = req.user!.role;
-  await this.replyService.deleteReply(replyId, userId, userRole);
-  sendSuccess(res, null, 'Reply deleted successfully');
-}
+    const replyId = String(req.params['id']);
+    const userId = new Types.ObjectId(req.user!.id);
+    const userRole = req.user!.role;
+    await this.replyService.deleteReply(replyId, userId, userRole);
+    sendSuccess(res, null, 'Reply deleted successfully');
+  }
 
   private async getReportedQueries(req: Request, res: Response): Promise<void> {
     const queries = await this.queryService.getReportedQueries();
