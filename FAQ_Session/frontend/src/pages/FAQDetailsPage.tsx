@@ -57,8 +57,8 @@ export const FAQDetailsPage: React.FC = () => {
     try {
       await postAnswer(question.id, answerInput.trim());
       setAnswerInput('');
-    } catch (err) {
-      console.error('Failed to submit answer:', err);
+    } catch {
+      // error toast is handled by postAnswer in AppContext
     } finally {
       setSubmitting(false);
     }

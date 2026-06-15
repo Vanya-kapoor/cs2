@@ -40,9 +40,8 @@ export const MainLayout: React.FC = () => {
         setSessionId(res.sessionId);
       }
       setChatMessages(prev => [...prev, { role: 'assistant', content: res.answer }]);
-    } catch (err) {
-      console.error(err);
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error connecting to my database servers. Please verify if the backend is running!' }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please check your connection and try again.' }]);
     } finally {
       setIsLoading(false);
     }

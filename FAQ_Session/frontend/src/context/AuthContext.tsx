@@ -32,8 +32,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const user = await apiService.getCurrentUser();
       if (user) setCurrentUser(user);
-    } catch (err) {
-      console.error('Failed to sync user:', err);
+    } catch {
+      // Silently fail — user simply isn't logged in
     }
   };
 
@@ -45,11 +45,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     init();
   }, []);
 
-  // If the backend reports a stale-role session (e.g. an admin demoted this
-  // user's role directly in the database while they were signed in), the
-  // session cookie no longer reflects reality. Sign the user out locally and
-  // surface a notice asking them to log back in so a fresh session/role is
-  // issued.
   useEffect(() => {
     const handleStaleSession = () => {
       apiService.signOut().catch(() => {});
@@ -62,11 +57,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const dismissSessionExpiredNotice = () => setSessionExpiredNotice(false);
-
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
-  // Re-fetches the current user from backend — call after actions that change stats
   const refreshCurrentUser = async () => {
     await syncUser();
   };
@@ -99,14 +92,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       await apiService.signOut();
-    } catch (err) {
-      console.error('Logout failed:', err);
+    } catch {
+      // Logout best-effort — clear local state regardless
     }
     setCurrentUser(null);
   };
 
-  // Re-sends the verification email for the currently signed-in user.
-  // Used by the "verify your email to unlock admin access" banner.
   const resendVerificationEmail = async () => {
     if (!currentUser?.email) return;
     await apiService.resendVerificationEmail(currentUser.email);

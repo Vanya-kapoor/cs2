@@ -29,7 +29,7 @@ export const BadgeProfileSection: React.FC<BadgeProfileSectionProps> = ({ userId
           setBadges(formattedBadges);
         }
       } catch (error) {
-        console.error('Failed to fetch badges:', error);
+        // silently fail — badges are non-critical
       } finally {
         setLoading(false);
       }
