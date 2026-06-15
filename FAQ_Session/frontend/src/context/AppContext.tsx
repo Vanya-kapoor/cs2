@@ -5,13 +5,13 @@ import { useToast } from './ToastContext';
 import { apiService, ApiErrorCode, getApiErrorCode, getApiErrorMessage } from '../utils/api';
 
 interface AppContextType {
-  questions: Question[];   // only queries (non-FAQ)
-  faqs: Question[];        // only FAQ entries
+  questions: Question[];   // queries (non-FAQ)
+  faqs: Question[];        // FAQ entries
   loading: boolean;
   askQuestion: (title: string, description: string) => Promise<void>;
   postAnswer: (questionId: string, content: string) => Promise<void>;
   acceptAnswer: (questionId: string, answerId: string) => Promise<void>;
-  convertToFAQ: (questionId: string) => Promise<void>;
+  promoteToFaq: (questionId: string) => Promise<void>;
   deleteQuestion: (questionId: string) => Promise<void>;
   deleteReply: (questionId: string, replyId: string) => Promise<void>;
   refreshData: () => Promise<void>;
@@ -32,16 +32,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [faqs, setFaqs] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = currentUser?.role === 'ADMIN';
-
   const loadBackendData = async () => {
     setLoading(true);
     try {
-      const [backendFaqs, backendQueries] = await Promise.all([
-        apiService.getFaqs(),
-        apiService.getQueries(isAdmin),
-      ]);
-      // Keep FAQs and queries completely separate
+      // Fetch FAQs first to build the sourceQueryId → faqId map,
+      // then pass it to getQueries so each query knows if it's already promoted.
+      const { questions: backendFaqs, sourceQueryMap } = await apiService.getFaqs();
+      const backendQueries = await apiService.getQueries(sourceQueryMap);
       setFaqs(backendFaqs);
       setQuestions(backendQueries);
     } catch (err) {
@@ -65,10 +62,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   };
 
-  // Surfaces a friendly toast for the admin-gating 403s
-  // (STALE_ROLE_SESSION / EMAIL_VERIFICATION_REQUIRED) that the backend
-  // returns, instead of letting a raw AxiosError bubble up to the console
-  // (and, for fire-and-forget calls, the page).
   const handleAdminActionError = (err: unknown, fallbackMessage: string) => {
     const code = getApiErrorCode(err);
 
@@ -95,7 +88,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const newQuestion = await apiService.createQuery(title, description);
       setQuestions(prev => [newQuestion, ...prev]);
-      // Re-fetch user stats so Profile page questionsAsked increments immediately
       await refreshCurrentUser();
     } catch (err) {
       console.error('Failed to raise query on backend:', err);
@@ -128,31 +120,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  /**
+   * Approve a reply — marks the query RESOLVED.
+   * Does NOT create a FAQ. Admin must separately click "Promote to FAQ".
+   */
   const acceptAnswer = async (questionId: string, answerId: string) => {
     if (!checkAuth() || !currentUser) return;
     try {
       await apiService.approveReply(answerId);
-      // Full reload so the approved reply gets promoted to FAQ in the faqs list
-      // and the query section shows the correct locked state
+      // Reload so status and reply.isApproved reflect correctly
       await loadBackendData();
     } catch (err) {
       handleAdminActionError(err, 'Failed to approve this reply. Please try again.');
     }
   };
 
-  const convertToFAQ = async (questionId: string) => {
+  /**
+   * Promote a RESOLVED query's approved reply to a FAQ entry.
+   * Only valid when query.status === 'RESOLVED' and query.linkedFaqId is null.
+   */
+  const promoteToFaq = async (questionId: string) => {
     if (!checkAuth() || !currentUser) return;
     if (currentUser.role !== 'ADMIN') return;
 
-    const q = questions.find(item => item.id === questionId);
-    if (!q || q.answers.length === 0) return;
-
     try {
-      const bestAnswer = q.answers.find(a => a.isAccepted) || q.answers[0];
-      await apiService.createFaq(q.title, bestAnswer.content);
+      await apiService.promoteToFaq(questionId);
+      showToast('Query promoted to FAQ successfully!', 'success');
+      // Full reload so linkedFaqId is populated on the query and FAQ appears in list
       await loadBackendData();
     } catch (err) {
-      handleAdminActionError(err, 'Failed to convert this question to an FAQ. Please try again.');
+      handleAdminActionError(err, 'Failed to promote this query to FAQ. Please try again.');
     }
   };
 
@@ -177,11 +174,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const deleteQuestion = async (questionId: string) => {
     try {
-      // Check FAQs first, then queries
       const isFaq = faqs.some(f => f.id === questionId);
       if (isFaq) {
         await apiService.deleteFaq(questionId);
         setFaqs(prev => prev.filter(f => f.id !== questionId));
+        // Update any query that was linked to this FAQ so it can be re-promoted
+        setQuestions(prev =>
+          prev.map(q => q.linkedFaqId === questionId ? { ...q, linkedFaqId: null } : q)
+        );
       } else {
         await apiService.deleteQuery(questionId);
         setQuestions(prev => prev.filter(q => q.id !== questionId));
@@ -209,7 +209,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         askQuestion,
         postAnswer,
         acceptAnswer,
-        convertToFAQ,
+        promoteToFaq,
         deleteQuestion,
         deleteReply,
         refreshData,

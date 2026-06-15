@@ -11,7 +11,6 @@ export const apiClient = axios.create({
   },
 });
 
-// Ensure JSON content-type on every request
 apiClient.interceptors.request.use((config) => {
   if (config.data && typeof config.data === 'object') {
     config.headers['Content-Type'] = 'application/json';
@@ -19,17 +18,8 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-/**
- * Error codes the backend attaches to 403 responses via `details.code`
- * (see backend `requireRole` middleware) so the UI can react to specific
- * authorization failures instead of showing a raw AxiosError.
- */
 export const ApiErrorCode = {
-  // The cached session still carries a stale role (e.g. the user was just
-  // demoted/promoted in the DB). The frontend should drop the local session
-  // and prompt the user to sign in again so a fresh session is issued.
   STALE_ROLE_SESSION: 'STALE_ROLE_SESSION',
-  // The user's role is admin but their email isn't verified yet.
   EMAIL_VERIFICATION_REQUIRED: 'EMAIL_VERIFICATION_REQUIRED',
 } as const;
 
@@ -43,10 +33,6 @@ export const getApiErrorMessage = (err: unknown): string | undefined => {
   return err.response?.data?.message;
 };
 
-// Custom event fired when the backend reports that the locally cached
-// session no longer matches the user's real role/permissions (e.g. they
-// were demoted while signed in). AuthContext listens for this to clear
-// local user state and prompt re-login.
 export const STALE_SESSION_EVENT = 'auth:stale-session';
 
 apiClient.interceptors.response.use(
@@ -78,7 +64,6 @@ interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Map backend role strings to frontend UserRole
 const mapRole = (role?: string): 'ADMIN' | 'INTERN' => {
   if (!role) return 'INTERN';
   const r = role.toLowerCase();
@@ -95,6 +80,7 @@ export const mapFaqToQuestion = (faq: any): Question => ({
   isAccepted: true,
   status: 'RESOLVED',
   createdAt: faq.createdAt || new Date().toISOString(),
+  linkedFaqId: faq._id,
   author: {
     id: faq.createdBy?._id || faq.createdBy || 'system',
     name: faq.createdBy?.name || 'Vicharanashala Lab',
@@ -123,7 +109,11 @@ export const mapFaqToQuestion = (faq: any): Question => ({
   ],
 });
 
-export const mapQueryToQuestion = (query: any, replies: any[] = []): Question => {
+export const mapQueryToQuestion = (
+  query: any,
+  replies: any[] = [],
+  linkedFaqId?: string | null,
+): Question => {
   const mappedAnswers: Answer[] = replies.map((rep) => ({
     id: rep._id,
     questionId: query._id,
@@ -158,6 +148,7 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
     isAccepted: hasAccepted,
     status: hasAccepted ? 'RESOLVED' : mapQueryStatus(query.status),
     createdAt: query.createdAt,
+    linkedFaqId: linkedFaqId ?? null,
     author: {
       id: query.createdBy?._id || query.createdBy || 'anonymous',
       name: query.createdBy?.name || 'Anonymous',
@@ -172,17 +163,29 @@ export const mapQueryToQuestion = (query: any, replies: any[] = []): Question =>
 
 export const apiService = {
   // --- FAQs ---
-  async getFaqs(page = 1, limit = 100): Promise<Question[]> {
+  async getFaqs(page = 1, limit = 100): Promise<{ questions: Question[]; sourceQueryMap: Record<string, string> }> {
     try {
       const response = await apiClient.get<PaginatedResponse<any>>(`/faqs?page=${page}&limit=${limit}`);
-      return (response.data.data || []).map(mapFaqToQuestion);
+      const rawFaqs = response.data.data || [];
+      // Build a map of sourceQueryId -> faqId for queries to check if they are promoted
+      const sourceQueryMap: Record<string, string> = {};
+      rawFaqs.forEach((faq: any) => {
+        if (faq.sourceQueryId) {
+          sourceQueryMap[String(faq.sourceQueryId)] = String(faq._id);
+        }
+      });
+      return { questions: rawFaqs.map(mapFaqToQuestion), sourceQueryMap };
     } catch (err) {
       console.error('Failed to get FAQs:', err);
-      return [];
+      return { questions: [], sourceQueryMap: {} };
     }
   },
   async createFaq(question: string, answer: string): Promise<Question> {
     const response = await apiClient.post<ApiResponse<any>>('/faqs', { question, answer });
+    return mapFaqToQuestion(response.data.data);
+  },
+  async promoteToFaq(queryId: string): Promise<Question> {
+    const response = await apiClient.post<ApiResponse<any>>(`/faqs/promote/${queryId}`);
     return mapFaqToQuestion(response.data.data);
   },
   async updateFaq(id: string, question: string, answer: string): Promise<Question> {
@@ -194,20 +197,20 @@ export const apiService = {
   },
 
   // --- Queries ---
-  async getQueries(isAdmin = false): Promise<Question[]> {
+  async getQueries(sourceQueryMap: Record<string, string> = {}): Promise<Question[]> {
     try {
       const response = await apiClient.get<PaginatedResponse<any>>('/queries?limit=100');
       const queries = response.data.data || [];
 
-      // Always fetch replies for all queries so users can see answered ones
       return await Promise.all(
         queries.map(async (q: any) => {
           try {
             const repsResponse = await apiClient.get<ApiResponse<any[]>>(`/queries/${q._id}/replies`);
-            return mapQueryToQuestion(q, repsResponse.data.data || []);
+            const linkedFaqId = sourceQueryMap[String(q._id)] ?? null;
+            return mapQueryToQuestion(q, repsResponse.data.data || [], linkedFaqId);
           } catch {
-            // If replies fetch fails (e.g. non-admin on restricted endpoint), return query without replies
-            return mapQueryToQuestion(q, []);
+            const linkedFaqId = sourceQueryMap[String(q._id)] ?? null;
+            return mapQueryToQuestion(q, [], linkedFaqId);
           }
         })
       );

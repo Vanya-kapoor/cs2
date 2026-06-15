@@ -41,4 +41,9 @@ export interface Question {
   createdAt: string;
   author: User;
   answers: Answer[];
+  /**
+   * Set on queries that have been promoted to FAQ.
+   * Used by the admin dashboard to show "View FAQ" instead of "Promote to FAQ".
+   */
+  linkedFaqId?: string | null;
 }
