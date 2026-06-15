@@ -9,32 +9,21 @@ import { EmptyState, SkeletonCard } from "../components/CommonWidgets";
 export const QuestionsFeed: React.FC = () => {
   const navigate = useNavigate();
   const { questions, loading } = useAppContext();
-  const [filter, setFilter] = useState<"newest" | "unanswered" | "answered">(
-    "newest",
-  );
+  const [filter, setFilter] = useState<"newest" | "unanswered" | "answered">("newest");
 
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   const filteredQuestions = [...questions].filter((q) => {
     if (q.isOfficial) return false;
-
     const createdAt = new Date(q.createdAt).getTime();
-
     if (createdAt < oneWeekAgo) return false;
-
-    if (filter === "unanswered") {
-      return q.answers.length === 0;
-    }
-
-    if (filter === "answered") {
-      return q.answers.length > 0;
-    }
-
+    if (filter === "unanswered") return q.answers.length === 0;
+    if (filter === "answered") return q.answers.length > 0;
     return true;
   });
 
   const sortedQuestions = filteredQuestions.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (
@@ -45,14 +34,14 @@ export const QuestionsFeed: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="space-y-6"
     >
-      {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 font-sans flex items-center gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 font-sans flex items-center gap-2">
             <span>Community Forum</span>
             <MessageSquare className="text-blue-500" size={22} />
           </h1>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-1.5">
             Ask questions, help fellow interns, and verify onboarding details
           </p>
         </div>
@@ -66,16 +55,16 @@ export const QuestionsFeed: React.FC = () => {
         </button>
       </div>
 
-      {/* Sorting Selectors */}
-      <div className="flex flex-wrap items-center gap-1 bg-white p-1 border border-slate-200 rounded-xl w-fit shadow-sm">
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-1 bg-white dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 rounded-xl w-fit shadow-sm">
         {(["newest", "unanswered", "answered"] as const).map((opt) => (
           <button
             key={opt}
             onClick={() => setFilter(opt)}
             className={`px-4 py-1.5 font-semibold text-xs uppercase transition-colors rounded-lg ${
               filter === opt
-                ? "bg-blue-50 text-blue-700 font-semibold"
-                : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
+                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                : "hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             {opt}
@@ -83,7 +72,7 @@ export const QuestionsFeed: React.FC = () => {
         ))}
       </div>
 
-      {/* Feed list */}
+      {/* Feed */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}

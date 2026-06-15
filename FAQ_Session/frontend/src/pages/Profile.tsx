@@ -11,7 +11,7 @@ export const Profile: React.FC = () => {
   if (authLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6">
+        <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6">
           <Skeleton className="w-24 h-24 rounded-full" />
           <div className="flex-1 w-full space-y-3">
             <Skeleton className="h-7 w-1/2" />
@@ -45,7 +45,6 @@ export const Profile: React.FC = () => {
     );
   }
 
-  // Use backend-computed stats directly
   const reputation = currentUser.stats.reputation;
   const questionsAsked = currentUser.stats.questionsAsked;
   const answersPosted = currentUser.stats.answersPosted;
@@ -59,38 +58,38 @@ export const Profile: React.FC = () => {
       className="max-w-3xl mx-auto space-y-8"
     >
       {/* Profile Card Header */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
-        {/* Large Avatar */}
-        <div className="w-24 h-24 border border-slate-200 rounded-full bg-slate-50 flex items-center justify-center text-5xl shadow-sm relative overflow-hidden">
+      <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
+        {/* Avatar */}
+        <div className="w-24 h-24 border border-slate-200 dark:border-slate-600 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-5xl shadow-sm relative overflow-hidden flex-shrink-0">
           {currentUser.avatar?.startsWith('http') ? (
             <img src={currentUser.avatar} alt={currentUser.name} referrerPolicy="no-referrer"
               className="w-full h-full object-cover" />
           ) : (
             currentUser.avatar
           )}
-          <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-900 border border-white text-[9px] text-white font-semibold rounded uppercase">
+          <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-slate-900 dark:bg-slate-950 border border-white dark:border-slate-700 text-[9px] text-white font-semibold rounded uppercase">
             {currentUser.role}
           </span>
         </div>
 
-        {/* Details info */}
+        {/* Details */}
         <div className="flex-1 space-y-2">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 font-sans leading-none">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 font-sans leading-none">
             {currentUser.name}
           </h1>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-1.5">
             {currentUser.role} · Platform Member
           </p>
 
           {/* Reputation bar */}
           <div className="pt-2 max-w-sm">
-            <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
+            <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
               <span>Reputation Level</span>
               <span>{reputation} Rep</span>
             </div>
-            <div className="w-full h-3 bg-slate-100 border border-slate-200/50 rounded-full overflow-hidden">
+            <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600/50 rounded-full overflow-hidden">
               <div
-                className="h-full bg-blue-600 rounded-full"
+                className="h-full bg-blue-600 rounded-full transition-all"
                 style={{ width: `${Math.min((reputation / 500) * 100, 100)}%` }}
               />
             </div>
@@ -98,26 +97,26 @@ export const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid of Stats Cards */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600">
-          <HelpCircle size={22} className="text-slate-400" />
+        <div className="p-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center gap-3 select-none">
+          <HelpCircle size={22} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
           <div>
-            <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Questions Asked</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{questionsAsked}</p>
+            <p className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 tracking-wider">Questions Asked</p>
+            <p className="text-2xl font-semibold text-slate-800 dark:text-slate-100 leading-none mt-1.5 font-sans">{questionsAsked}</p>
           </div>
         </div>
 
-        <div className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm flex items-center gap-3 select-none text-slate-600">
-          <MessageSquare size={22} className="text-slate-400" />
+        <div className="p-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center gap-3 select-none">
+          <MessageSquare size={22} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
           <div>
-            <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Answers Posted</p>
-            <p className="text-2xl font-semibold text-slate-800 leading-none mt-1.5 font-sans">{answersPosted}</p>
+            <p className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 tracking-wider">Answers Posted</p>
+            <p className="text-2xl font-semibold text-slate-800 dark:text-slate-100 leading-none mt-1.5 font-sans">{answersPosted}</p>
           </div>
         </div>
       </div>
 
-      {/* Badge Showcase from backend */}
+      {/* Badge Showcase */}
       <BadgeProfileSection userId={currentUser.id} />
     </motion.div>
   );

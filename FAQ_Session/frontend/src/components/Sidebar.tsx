@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       )}
 
       <motion.aside
-        className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col w-[260px] bg-slate-50 border-r border-slate-200 p-5 transition-transform md:translate-x-0 ${
+        className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col w-[260px] bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 p-5 transition-transform md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         initial={{ x: -260 }}
@@ -46,15 +46,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         transition={{ type: 'tween', duration: 0.2 }}
       >
         {/* App Branding */}
-        <div className="flex items-center gap-3 py-3 mb-6 bg-white border border-slate-200 rounded-xl p-3 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600 text-xl font-bold">
+        <div className="flex items-center gap-3 py-3 mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 text-xl font-bold">
             🚀
           </div>
           <div>
-            <h1 className="font-semibold text-lg tracking-tight leading-none flex items-center gap-1 font-sans text-slate-900">
+            <h1 className="font-semibold text-lg tracking-tight leading-none flex items-center gap-1 font-sans text-slate-900 dark:text-slate-100">
               Yaksha
             </h1>
-            <p className="text-[9px] uppercase font-bold tracking-wider text-slate-500 leading-none mt-1">
+            <p className="text-[9px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400 leading-none mt-1">
               FAQ & KNOWLEDGE
             </p>
           </div>
@@ -70,8 +70,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3.5 py-2 text-sm font-medium transition-colors duration-150 rounded-lg ${
                   isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                 }`
               }
             >
@@ -82,21 +82,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
           {/* Admin Panel (Role Based) */}
           {!authLoading && currentUser && currentUser.role === 'ADMIN' && (
-            <div className="pt-3 mt-3 border-t border-slate-200">
+            <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
               <NavLink
                 to={adminItem.path}
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2 text-sm font-medium transition-colors duration-150 rounded-lg ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                   }`
                 }
               >
-                <adminItem.icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                <adminItem.icon className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
                 <span className="flex-1 font-sans text-sm">{adminItem.name}</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-medium bg-red-100 text-red-700 rounded-md">
+                <span className="px-1.5 py-0.5 text-[9px] font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md">
                   Admin
                 </span>
               </NavLink>
@@ -104,12 +104,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           )}
         </nav>
 
-        {/* Footer Decorative card */}
+        {/* Footer card */}
         <div className="mt-auto pt-4">
-          <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col items-center text-center">
+          <div className="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col items-center text-center">
             <span className="text-2xl mb-1.5">💡</span>
-            <h4 className="font-medium text-sm mb-1 text-slate-900 leading-tight">Got a query?</h4>
-            <p className="text-[11px] text-slate-500 mb-3">Answers are just one question away!</p>
+            <h4 className="font-medium text-sm mb-1 text-slate-900 dark:text-slate-100 leading-tight">Got a query?</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Answers are just one question away!</p>
             <NavLink
               to="/ask"
               onClick={() => setIsOpen(false)}

@@ -1,4 +1,3 @@
-// src/pages/AskQuestion.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +19,6 @@ export const AskQuestion: React.FC = () => {
   const [descriptionError, setDescriptionError] = useState('');
   const [submitError, setSubmitError] = useState('');
 
-  // Dynamic "Similar Questions" check
   useEffect(() => {
     if (title.trim().length > 3) {
       const matches = questions.filter(q =>
@@ -62,9 +60,7 @@ export const AskQuestion: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError('');
-
     if (!validate()) return;
-
     try {
       await askQuestion(title.trim(), description.trim());
       navigate('/questions');
@@ -80,8 +76,16 @@ export const AskQuestion: React.FC = () => {
   };
 
   const inputBase =
-    'w-full p-3 border rounded-lg outline-none text-sm font-normal placeholder:text-slate-400 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all';
-  const inputErrorClass = 'border-red-300 focus:border-red-400 focus:ring-red-400';
+    'w-full p-3 border rounded-lg outline-none text-sm font-normal ' +
+    'placeholder:text-slate-400 dark:placeholder:text-slate-500 ' +
+    'bg-slate-50/50 dark:bg-slate-700/50 ' +
+    'text-slate-800 dark:text-slate-100 ' +
+    'focus:bg-white dark:focus:bg-slate-700 ' +
+    'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ' +
+    'transition-all';
+
+  const inputNormal = 'border-slate-200 dark:border-slate-600';
+  const inputErrorClass = 'border-red-300 dark:border-red-500 focus:border-red-400 focus:ring-red-400';
 
   return (
     <motion.div
@@ -91,22 +95,26 @@ export const AskQuestion: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="max-w-2xl mx-auto"
     >
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-6">
-        {/* Header Title */}
-        <div className="border-b border-slate-100 pb-4 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-xl mb-3 shadow-sm">
+      <div className="p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm space-y-6">
+
+        {/* Header */}
+        <div className="border-b border-slate-100 dark:border-slate-700 pb-4 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-600 border border-blue-100 dark:border-blue-800 rounded-full text-xl mb-3 shadow-sm">
             ✏️
           </div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-800 font-sans leading-tight">Ask Onboarding Query</h1>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-800 dark:text-slate-100 font-sans leading-tight">
+            Ask Onboarding Query
+          </h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-1.5">
             Get official verified answers from Mentors &amp; HR Admins
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+
           {/* Question Title */}
           <div className="relative space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
+            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
               <span>Question Summary</span>
               <Sparkles size={12} className="text-blue-500" />
             </label>
@@ -115,10 +123,10 @@ export const AskQuestion: React.FC = () => {
               placeholder="Be specific. e.g., 'What bank accounts are accepted for SalaryHub disbursement?'"
               value={title}
               onChange={(e) => { setTitle(e.target.value); setTitleError(''); }}
-              className={`${inputBase} ${titleError ? inputErrorClass : 'border-slate-200'}`}
+              className={`${inputBase} ${titleError ? inputErrorClass : inputNormal}`}
             />
             {titleError && (
-              <p className="text-xs text-red-500 pl-1">{titleError}</p>
+              <p className="text-xs text-red-500 dark:text-red-400 pl-1">{titleError}</p>
             )}
 
             {/* Similar Questions Dropdown */}
@@ -128,10 +136,10 @@ export const AskQuestion: React.FC = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute left-0 right-0 top-full mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 shadow-lg z-20 space-y-2"
+                  className="absolute left-0 right-0 top-full mt-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 shadow-lg z-20 space-y-2"
                 >
-                  <div className="flex items-center gap-1 border-b border-amber-200/50 pb-1.5">
-                    <span className="text-xs font-semibold uppercase text-amber-800 tracking-wider">
+                  <div className="flex items-center gap-1 border-b border-amber-200/50 dark:border-amber-700/50 pb-1.5">
+                    <span className="text-xs font-semibold uppercase text-amber-800 dark:text-amber-400 tracking-wider">
                       🚨 Matches Found! (Similar Questions):
                     </span>
                   </div>
@@ -140,12 +148,12 @@ export const AskQuestion: React.FC = () => {
                       <div
                         key={q.id}
                         onClick={() => navigate(`/questions/${q.id}`)}
-                        className="p-2.5 bg-white border border-amber-200/50 hover:bg-amber-50/50 rounded-lg cursor-pointer transition-colors shadow-sm"
+                        className="p-2.5 bg-white dark:bg-slate-700 border border-amber-200/50 dark:border-amber-700/30 hover:bg-amber-50/50 dark:hover:bg-slate-600 rounded-lg cursor-pointer transition-colors shadow-sm"
                       >
-                        <h4 className="text-xs font-semibold leading-tight truncate hover:underline text-slate-800">
+                        <h4 className="text-xs font-semibold leading-tight truncate hover:underline text-slate-800 dark:text-slate-100">
                           {q.title}
                         </h4>
-                        <p className="text-[9px] text-slate-400 font-medium uppercase mt-0.5">
+                        <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium uppercase mt-0.5">
                           {q.answers.length} Answers
                         </p>
                       </div>
@@ -156,48 +164,50 @@ export const AskQuestion: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          {/* Description Details */}
+          {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
+            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
               <span>Detailed Context</span>
-              <FileText size={12} className="text-slate-400" />
+              <FileText size={12} className="text-slate-400 dark:text-slate-500" />
             </label>
             <textarea
               rows={5}
               placeholder="Explain the background. List what you have tried, relevant dates, team roles, or HR policies."
               value={description}
               onChange={(e) => { setDescription(e.target.value); setDescriptionError(''); }}
-              className={`${inputBase} ${descriptionError ? inputErrorClass : 'border-slate-200'}`}
+              className={`${inputBase} ${descriptionError ? inputErrorClass : inputNormal}`}
             />
             {descriptionError && (
-              <p className="text-xs text-red-500 pl-1">{descriptionError}</p>
+              <p className="text-xs text-red-500 dark:text-red-400 pl-1">{descriptionError}</p>
             )}
           </div>
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Tags (comma-separated)</label>
+            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+              Tags (comma-separated)
+            </label>
             <input
               type="text"
               placeholder="e.g. stipend, onboarding, finance, sbi-bank"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className={`${inputBase} border-slate-200`}
+              className={`${inputBase} ${inputNormal}`}
             />
-            <p className="text-[10px] text-slate-400 font-medium leading-none pl-1 mt-1">
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-none pl-1 mt-1">
               Add up to 5 keywords to help others find this question.
             </p>
           </div>
 
-          {/* API-level error */}
+          {/* Submit error */}
           {submitError && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg">
-              <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-red-600">{submitError}</p>
+            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg">
+              <AlertCircle size={14} className="text-red-500 dark:text-red-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-red-600 dark:text-red-400">{submitError}</p>
             </div>
           )}
 
-          {/* Submit Action */}
+          {/* Submit Button */}
           <div className="pt-3">
             <button
               type="submit"

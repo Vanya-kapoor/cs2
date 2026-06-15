@@ -1,6 +1,7 @@
 import React from 'react';
-import { Menu, LogIn, LogOut } from 'lucide-react';
+import { Menu, LogIn, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { Skeleton } from './CommonWidgets';
 import { NotificationPanel } from './NotificationPanel';
 
@@ -10,27 +11,37 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const { currentUser, isAuthenticated, authLoading, logout, openLoginModal } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-[72px] bg-white border-b border-slate-200 px-6">
+    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-[72px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 transition-colors">
       {/* Mobile Toggle & Brand */}
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="p-2 border border-slate-200 rounded-lg bg-white text-slate-600 hover:bg-slate-50 transition-colors md:hidden shadow-sm"
+          className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors md:hidden shadow-sm"
         >
           <Menu size={20} />
         </button>
         <div className="hidden md:flex items-center gap-2">
           <span className="text-xl">🎓</span>
-          <span className="font-semibold text-sm text-slate-500 font-sans">
+          <span className="font-semibold text-sm text-slate-500 dark:text-slate-400 font-sans">
             Yaksha FAQ Platform
           </span>
         </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors"
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
         {authLoading ? (
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end gap-1.5">
@@ -43,12 +54,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           <div className="flex items-center gap-3">
             <NotificationPanel />
             <div className="hidden sm:flex flex-col items-end">
-              <span className="font-medium text-sm text-slate-800 leading-none">{currentUser.name}</span>
+              <span className="font-medium text-sm text-slate-800 dark:text-slate-100 leading-none">{currentUser.name}</span>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
+                <span className="text-[9px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
                   {currentUser.role}
                 </span>
-                <span className="text-[11px] font-medium text-slate-500">
+                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   🏆 {currentUser.stats.reputation} Rep
                 </span>
               </div>
@@ -56,16 +67,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
 
             {currentUser.avatar?.startsWith('http') ? (
               <img src={currentUser.avatar} alt={currentUser.name} referrerPolicy="no-referrer"
-               className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm" />
+               className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-600 shadow-sm" />
                ) : (
-               <div className="flex items-center justify-center w-9 h-9 border border-slate-200 rounded-full bg-slate-100 text-lg shadow-sm">
+               <div className="flex items-center justify-center w-9 h-9 border border-slate-200 dark:border-slate-600 rounded-full bg-slate-100 dark:bg-slate-700 text-lg shadow-sm">
                 {currentUser.avatar}
                </div>
              )}
 
             <button
               onClick={logout}
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 shadow-sm transition-colors"
+              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors"
               title="Logout"
             >
               <LogOut size={16} />
