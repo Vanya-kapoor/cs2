@@ -18,6 +18,11 @@ import { globalLimiter, authLimiter, chatLimiter, queryLimiter } from './core/mi
 const createApp = (): Application => {
   const app = express();
 
+  // Trust the first proxy hop (Nginx, Render, Railway, Cloudflare, etc.)
+  // so req.ip reflects the real client IP from X-Forwarded-For instead
+  // of the proxy's IP. Without this, all users share one rate-limit bucket.
+  app.set('trust proxy', 1);
+
   // ─── Global Middleware ────────────────────────────────────────────────
   app.use(
     cors({

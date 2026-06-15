@@ -26,8 +26,8 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({ answer, questionAuthorId
     setDeleting(true);
     try {
       await deleteReply(answer.questionId, answer.id);
-    } catch (err) {
-      console.error('Failed to delete reply:', err);
+    } catch {
+      // error is already surfaced as a toast by deleteReply in AppContext
     } finally {
       setDeleting(false);
     }

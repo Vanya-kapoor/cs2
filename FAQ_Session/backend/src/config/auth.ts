@@ -57,7 +57,7 @@ const createAuth = () => {
         // backend itself, which has no route — hence "Route not found: GET /".
         // Force the redirect to land on the frontend instead.
         const redirectUrl = new URL(url);
-        redirectUrl.searchParams.set('callbackURL', `${env.CORS_ORIGIN}/profile`);
+        redirectUrl.searchParams.set('callbackURL', `${env.CORS_ORIGIN}/email-verified`);
 
         await sendEmail({
           to: user.email,

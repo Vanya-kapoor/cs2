@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 import { Award, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import SearchBar from '../components/SearchBar';
-import { StatsCard } from '../components/CommonWidgets';
+import { StatsCard, ServerErrorBanner } from '../components/CommonWidgets';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { questions, getStats, loading } = useAppContext();
+  const { questions, getStats, loading, dataError, refreshData } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
 
   const stats = getStats();
@@ -38,6 +38,13 @@ export const Home: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="space-y-8"
     >
+      {dataError && (
+        <ServerErrorBanner
+          message={dataError}
+          onRetry={refreshData}
+        />
+      )}
+
       {/* Hero Banner */}
       <div className="relative p-8 md:p-12 border border-slate-200 bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col items-center text-center z-10">
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/40 via-white to-indigo-50/20 -z-10" />
