@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import LoginModal from '../components/LoginModal';
+import VerificationBanner from '../components/VerificationBanner';
 import { apiService } from '../utils/api';
 import { MessageSquare, X, Send } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const MainLayout: React.FC = () => {
 
         {/* Dynamic Content Viewport */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 max-w-7xl w-full mx-auto pb-24">
+          <VerificationBanner />
           <Outlet />
         </main>
       </div>

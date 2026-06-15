@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { apiService } from '../utils/api';
+import { apiService, STALE_SESSION_EVENT } from '../utils/api';
 
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
   authLoading: boolean;
   isLoginModalOpen: boolean;
+  sessionExpiredNotice: boolean;
+  dismissSessionExpiredNotice: () => void;
   openLoginModal: () => void;
   closeLoginModal: () => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -15,6 +17,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshCurrentUser: () => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
 
   const syncUser = async () => {
     try {
@@ -41,6 +45,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     init();
   }, []);
 
+  // If the backend reports a stale-role session (e.g. an admin demoted this
+  // user's role directly in the database while they were signed in), the
+  // session cookie no longer reflects reality. Sign the user out locally and
+  // surface a notice asking them to log back in so a fresh session/role is
+  // issued.
+  useEffect(() => {
+    const handleStaleSession = () => {
+      apiService.signOut().catch(() => {});
+      setCurrentUser(null);
+      setSessionExpiredNotice(true);
+      setIsLoginModalOpen(true);
+    };
+    window.addEventListener(STALE_SESSION_EVENT, handleStaleSession);
+    return () => window.removeEventListener(STALE_SESSION_EVENT, handleStaleSession);
+  }, []);
+
+  const dismissSessionExpiredNotice = () => setSessionExpiredNotice(false);
+
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
@@ -54,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const user = await apiService.getCurrentUser();
     setCurrentUser(user);
     setIsLoginModalOpen(false);
+    setSessionExpiredNotice(false);
   };
 
   const signUp = async (name: string, email: string, password: string) => {
@@ -82,6 +105,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentUser(null);
   };
 
+  // Re-sends the verification email for the currently signed-in user.
+  // Used by the "verify your email to unlock admin access" banner.
+  const resendVerificationEmail = async () => {
+    if (!currentUser?.email) return;
+    await apiService.resendVerificationEmail(currentUser.email);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -89,6 +119,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: currentUser !== null,
         authLoading,
         isLoginModalOpen,
+        sessionExpiredNotice,
+        dismissSessionExpiredNotice,
         openLoginModal,
         closeLoginModal,
         signIn,
@@ -97,6 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         forgotPassword,
         logout,
         refreshCurrentUser,
+        resendVerificationEmail,
       }}
     >
       {children}
