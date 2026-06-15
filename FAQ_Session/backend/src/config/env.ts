@@ -21,6 +21,16 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().email('EMAIL_FROM must be a valid email'),
   EMAIL_FROM_NAME: z.string().default('FAQ System'),
   SYSTEM_ADMIN_ID: z.string().optional(),
+
+  // Rate Limiting (optional, all have safe defaults)
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),     // 15 minutes
+  RATE_LIMIT_MAX: z.coerce.number().default(100),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(15),
+  CHAT_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),  // 1 minute
+  CHAT_RATE_LIMIT_MAX: z.coerce.number().default(5),
+  QUERY_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
+  QUERY_RATE_LIMIT_MAX: z.coerce.number().default(5),
 });
 
 const parsed = envSchema.safeParse(process.env);

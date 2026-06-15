@@ -99,3 +99,12 @@ export class ServiceError extends AppError {
     super(message, HttpStatus.SERVICE_UNAVAILABLE, details, true);
   }
 }
+
+/**
+ * Too Many Requests (429) — Rate limit exceeded
+ */
+export class TooManyRequestsError extends AppError {
+  constructor(message = 'Too many requests, please try again later.', details?: any) {
+    super(message, HttpStatus.TOO_MANY_REQUESTS, details, true);
+  }
+}

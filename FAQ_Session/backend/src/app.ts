@@ -13,9 +13,15 @@ import notificationRoutes from './modules/notification/notification.routes';
 import { errorMiddleware } from './core/middleware/error.middleware';
 import { notFoundMiddleware } from './core/middleware/notFound.middleware';
 import { logger } from './core/utils/logger';
+import { globalLimiter, authLimiter, chatLimiter, queryLimiter } from './core/middleware/rateLimit.middleware';
 
 const createApp = (): Application => {
   const app = express();
+
+  // Trust the first proxy hop (Nginx, Render, Railway, Cloudflare, etc.)
+  // so req.ip reflects the real client IP from X-Forwarded-For instead
+  // of the proxy's IP. Without this, all users share one rate-limit bucket.
+  app.set('trust proxy', 1);
 
   // ─── Global Middleware ────────────────────────────────────────────────
   app.use(
@@ -27,6 +33,9 @@ const createApp = (): Application => {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // ─── Rate Limiting ──────────────────────────────────────────────────
+  app.use(globalLimiter);
 
   // ─── Health Check ─────────────────────────────────────────────────────
   app.get('/health', (_req, res) => {
@@ -49,7 +58,7 @@ const createApp = (): Application => {
    *   POST /api/auth/sign-out
    *   GET  /api/auth/session
    */
-  app.use('/api/auth', authController.router);
+  app.use('/api/auth', authLimiter, authController.router);
 
   /**
    * FAQ routes (public read, admin write):
@@ -68,7 +77,7 @@ const createApp = (): Application => {
    *   GET    /api/queries/:id       – get single query (admin)
    *   DELETE /api/queries/:id       – delete query (admin)
    */
-  app.use('/api/queries', queryController.router);
+  app.use('/api/queries', queryLimiter, queryController.router);
 
   /**
    * Reply routes (authenticated reply, admin approve):
@@ -78,7 +87,7 @@ const createApp = (): Application => {
    */
   app.use('/api', replyController.router);
 
-  app.use('/api/chat', chatController.router);
+  app.use('/api/chat', chatLimiter, chatController.router);
   app.use('/api/badges', badgeRoutes);
   app.use('/api/notifications', notificationRoutes);
 

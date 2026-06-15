@@ -182,7 +182,6 @@ export const apiService = {
       });
       return { questions: rawFaqs.map(mapFaqToQuestion), sourceQueryMap };
     } catch (err) {
-      console.error('Failed to get FAQs:', err);
       return { questions: [], sourceQueryMap: {} };
     }
   },
@@ -221,7 +220,6 @@ export const apiService = {
         })
       );
     } catch (err) {
-      console.error('Failed to get Queries:', err);
       return [];
     }
   },
@@ -326,7 +324,6 @@ export const apiService = {
       const response = await apiClient.get<ApiResponse<any[]>>('/admin/users');
       return response.data.data || [];
     } catch (err) {
-      console.error('Failed to get users:', err);
       return [];
     }
   },

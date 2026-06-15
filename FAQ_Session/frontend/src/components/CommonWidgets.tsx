@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Award, CheckCircle } from 'lucide-react';
+import { ShieldCheck, Award, CheckCircle, AlertTriangle } from 'lucide-react';
 
 // ==========================================
 // 0. Skeleton primitives
@@ -128,3 +128,28 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ title, description }) =>
     </div>
   );
 };
+
+// ==========================================
+// 5. ServerErrorBanner
+// ==========================================
+interface ServerErrorBannerProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+export const ServerErrorBanner: React.FC<ServerErrorBannerProps> = ({ message, onRetry }) => (
+  <div className="w-full flex items-center justify-between gap-3 p-4 mb-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 flex-wrap">
+    <div className="flex items-center gap-2.5">
+      <AlertTriangle size={16} className="text-rose-500 flex-shrink-0" />
+      <p className="text-sm font-medium leading-relaxed">{message}</p>
+    </div>
+    {onRetry && (
+      <button
+        onClick={onRetry}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-rose-300 bg-white text-rose-700 rounded-lg hover:bg-rose-50 transition-colors flex-shrink-0 cursor-pointer"
+      >
+        Retry
+      </button>
+    )}
+  </div>
+);

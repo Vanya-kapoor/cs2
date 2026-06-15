@@ -8,6 +8,7 @@ interface AppContextType {
   questions: Question[];   // queries (non-FAQ)
   faqs: Question[];        // FAQ entries
   loading: boolean;
+  dataError: string | null; // non-null when initial load failed
   askQuestion: (title: string, description: string) => Promise<void>;
   postAnswer: (questionId: string, content: string) => Promise<void>;
   acceptAnswer: (questionId: string, answerId: string) => Promise<void>;
@@ -37,18 +38,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [faqs, setFaqs] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   const loadBackendData = async () => {
     setLoading(true);
+    setDataError(null);
     try {
-      // Fetch FAQs first to build the sourceQueryId → faqId map,
-      // then pass it to getQueries so each query knows if it's already promoted.
       const { questions: backendFaqs, sourceQueryMap } = await apiService.getFaqs();
       const backendQueries = await apiService.getQueries(sourceQueryMap);
       setFaqs(backendFaqs);
       setQuestions(backendQueries);
-    } catch (err) {
-      console.error('Failed to sync backend data:', err);
+    } catch (err: unknown) {
+      // Never log stack traces; surface a friendly message via state
+      const message =
+        (err as any)?.response?.data?.message ||
+        (err as any)?.message ||
+        'Failed to load data from the server.';
+      setDataError(message);
+      showToast('Could not connect to the server. Some content may be unavailable.', 'error');
     } finally {
       setLoading(false);
     }
@@ -83,7 +90,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const message = getApiErrorMessage(err) || fallbackMessage;
     showToast(message, 'error');
-    console.error(fallbackMessage, err);
   };
 
   const refreshData = async () => {
@@ -95,8 +101,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const newQuestion = await apiService.createQuery(title, description);
       setQuestions(prev => [newQuestion, ...prev]);
       await refreshCurrentUser();
-    } catch (err) {
-      console.error('Failed to raise query on backend:', err);
+    } catch (err: unknown) {
+      const message =
+        (err as any)?.response?.data?.message ||
+        'Failed to post your question. Please try again.';
+      showToast(message, 'error');
       throw err;
     }
   };
@@ -120,31 +129,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           return q;
         })
       );
-    } catch (err) {
-      console.error('Failed to post reply to backend:', err);
+    } catch (err: unknown) {
+      const message =
+        (err as any)?.response?.data?.message ||
+        'Failed to post your reply. Please try again.';
+      showToast(message, 'error');
       throw err;
     }
   };
 
-  /**
-   * Approve a reply — marks the query RESOLVED.
-   * Does NOT create a FAQ. Admin must separately click "Promote to FAQ".
-   */
   const acceptAnswer = async (questionId: string, answerId: string) => {
     if (!checkAuth() || !currentUser) return;
     try {
       await apiService.approveReply(answerId);
-      // Reload so status and reply.isApproved reflect correctly
       await loadBackendData();
     } catch (err) {
       handleAdminActionError(err, 'Failed to approve this reply. Please try again.');
     }
   };
 
-  /**
-   * Promote a RESOLVED query's approved reply to a FAQ entry.
-   * Only valid when query.status === 'RESOLVED' and query.linkedFaqId is null.
-   */
   const promoteToFaq = async (questionId: string) => {
     if (!checkAuth() || !currentUser) return;
     if (currentUser.role !== 'ADMIN') return;
@@ -152,7 +155,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await apiService.promoteToFaq(questionId);
       showToast('Query promoted to FAQ successfully!', 'success');
-      // Full reload so linkedFaqId is populated on the query and FAQ appears in list
       await loadBackendData();
     } catch (err) {
       handleAdminActionError(err, 'Failed to promote this query to FAQ. Please try again.');
@@ -184,7 +186,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (isFaq) {
         await apiService.deleteFaq(questionId);
         setFaqs(prev => prev.filter(f => f.id !== questionId));
-        // Update any query that was linked to this FAQ so it can be re-promoted
         setQuestions(prev =>
           prev.map(q => q.linkedFaqId === questionId ? { ...q, linkedFaqId: null } : q)
         );
@@ -240,6 +241,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         questions,
         faqs,
         loading,
+        dataError,
         askQuestion,
         postAnswer,
         acceptAnswer,

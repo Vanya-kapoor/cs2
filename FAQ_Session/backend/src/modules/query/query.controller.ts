@@ -5,7 +5,7 @@ import { QueryService, QueryPaginationQuery } from './query.service';
 import { QueryRepository } from './query.repository';
 import { asyncHandler } from '../../core/utils/asyncHandler';
 import { validate } from '../../core/middleware/validate.middleware';
-import { requireAuth, requireRole } from '../../core/middleware/auth.middleware';
+import { requireAuth, requireRole, attachUser } from '../../core/middleware/auth.middleware';
 import { sendSuccess, sendCreated, sendPaginated } from '../../core/utils/response';
 import { Messages } from '../../core/constants/messages';
 import { Roles } from '../../core/constants/roles';
@@ -22,7 +22,7 @@ export class QueryController extends BaseController {
 
   protected registerRoutes(): void {
     // Public – any user (authenticated or not) can raise a query
-    this.router.post('/', validate(CreateQueryDto), asyncHandler(this.createQuery.bind(this)));
+    this.router.post('/', attachUser, validate(CreateQueryDto), asyncHandler(this.createQuery.bind(this)));
 
     // list all queries with optional status filter
     this.router.get(
