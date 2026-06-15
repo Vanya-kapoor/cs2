@@ -5,7 +5,6 @@ import { QueryRepository } from '../query/query.repository';
 import { FaqRepository } from '../faq/faq.repository';
 import { EmbeddingService } from '../faq/embedding.service';
 import { IReply } from './reply.interface';
-import { IFaq } from '../faq/faq.interface';
 import { NotFoundError, BadRequestError } from '../../core/errors';
 import { Messages } from '../../core/constants/messages';
 import { CreateReplyDtoType } from './reply.dto';
@@ -14,11 +13,6 @@ import { BadgeRepository } from '../badge/badge.repository';
 import { UserRepository } from '../user/user.repository';
 import { ForbiddenError } from '../../core/errors';
 import { NotificationService } from '../notification/notification.service';
-
-export interface ApproveReplyResult {
-  faq: IFaq;
-  reply: IReply;
-}
 
 export class ReplyService extends BaseService {
   constructor(
@@ -69,7 +63,12 @@ export class ReplyService extends BaseService {
     return reply;
   }
 
-  async approveReply(replyId: string, adminId: Types.ObjectId): Promise<ApproveReplyResult> {
+  /**
+   * Approves a reply and marks the query as resolved.
+   * Does NOT create a FAQ — that is a separate explicit admin action
+   * via POST /faqs/promote/:queryId
+   */
+  async approveReply(replyId: string, adminId: Types.ObjectId): Promise<IReply> {
     const reply = await this.replyRepo.findById(replyId);
     if (!reply) throw new NotFoundError(Messages.REPLY_NOT_FOUND);
 
@@ -80,30 +79,15 @@ export class ReplyService extends BaseService {
     const query = await this.queryRepo.findById(reply.queryId.toString());
     if (!query) throw new NotFoundError(Messages.QUERY_NOT_FOUND);
 
-    const embeddingText = this.embeddingService.buildEmbeddingText(
-      query.title,
-      reply.content,
-    );
-    const embedding = await this.embeddingService.createEmbedding(embeddingText);
-
-    const faq = await this.faqRepo.create({
-      question: query.title,
-      answer: reply.content,
-      embedding,
-      createdBy: adminId,
-      approvedBy: adminId,
-      sourceQueryId: query._id as Types.ObjectId,
-      approvedReplyId: reply._id as Types.ObjectId,
-    });
-
     const approvedReply = await this.replyRepo.markApproved(replyId);
     await this.queryRepo.markResolved(reply.queryId.toString());
 
+    // Evaluate contribution badges for the replier
     const badgeService = new BadgeService(
       new BadgeRepository(),
       new UserRepository(),
       this.replyRepo,
-      this.queryRepo
+      this.queryRepo,
     );
     badgeService.evaluateContributionBadges(reply.userId.toString()).catch(console.error);
     if (query.createdBy) {
@@ -112,7 +96,7 @@ export class ReplyService extends BaseService {
 
     const notificationService = new NotificationService();
 
-    // Notify the replier — goes to the question to see their pinned answer
+    // Notify the replier
     notificationService.createNotification({
       userId: reply.userId.toString(),
       title: 'Reply Approved',
@@ -121,18 +105,18 @@ export class ReplyService extends BaseService {
       link: `/questions/${reply.queryId.toString()}`,
     }).catch(console.error);
 
-    // Notify the question author — goes to the FAQ entry
+    // Notify the question author that their query is resolved
     if (query.createdBy) {
       notificationService.createNotification({
         userId: query.createdBy.toString(),
-        title: 'Question Marked as FAQ',
-        message: 'Your question has been marked as a frequently asked question!',
-        type: 'FAQ',
-        link: `/faqs/${faq._id.toString()}`,
+        title: 'Query Resolved',
+        message: 'Your question has been answered and marked as resolved.',
+        type: 'APPROVAL',
+        link: `/questions/${reply.queryId.toString()}`,
       }).catch(console.error);
     }
 
-    return { faq, reply: approvedReply! };
+    return approvedReply!;
   }
 
   async deleteReply(replyId: string, userId: Types.ObjectId, userRole: string): Promise<void> {

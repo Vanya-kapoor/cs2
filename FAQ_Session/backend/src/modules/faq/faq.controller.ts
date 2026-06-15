@@ -27,13 +27,22 @@ export class FaqController extends BaseController {
     this.router.get('/', asyncHandler(this.getFaqs.bind(this)));
     this.router.get('/:id', asyncHandler(this.getFaqById.bind(this)));
 
-    // Admin – directly create an FAQ (question + answer, no query/reply needed)
+    // Admin – directly create an FAQ (question + answer typed manually, no query/reply needed)
     this.router.post(
       '/',
       requireAuth,
       requireRole(Roles.ADMIN),
       validate(CreateFaqDto),
       asyncHandler(this.createFaq.bind(this)),
+    );
+
+    // Admin – promote a resolved query's approved reply to FAQ
+    // POST /faqs/promote/:queryId
+    this.router.post(
+      '/promote/:queryId',
+      requireAuth,
+      requireRole(Roles.ADMIN),
+      asyncHandler(this.promoteToFaq.bind(this)),
     );
 
     // Admin – update FAQ
@@ -68,6 +77,13 @@ export class FaqController extends BaseController {
     const adminId = new Types.ObjectId(req.user!.id);
     const faq = await this.faqService.createFaq(req.body, adminId);
     sendCreated(res, faq, Messages.FAQ_CREATED);
+  }
+
+  private async promoteToFaq(req: Request, res: Response): Promise<void> {
+    const queryId = String(req.params['queryId']);
+    const adminId = new Types.ObjectId(req.user!.id);
+    const faq = await this.faqService.promoteQueryToFaq(queryId, adminId);
+    sendCreated(res, faq, Messages.FAQ_PROMOTED);
   }
 
   private async updateFaq(req: Request, res: Response): Promise<void> {
