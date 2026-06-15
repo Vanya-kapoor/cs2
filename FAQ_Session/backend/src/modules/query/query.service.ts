@@ -47,6 +47,8 @@ export class QueryService extends BaseService {
     });
 
     if (userId) {
+      await query.populate('createdBy', 'name email image role');
+
       const badgeService = new BadgeService(
         new BadgeRepository(),
         new UserRepository(),

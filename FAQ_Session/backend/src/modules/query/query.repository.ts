@@ -8,10 +8,21 @@ export class QueryRepository extends BaseRepository<IQuery> {
     super(QueryModel);
   }
 
+  override async findById(id: string): Promise<IQuery | null> {
+    try {
+      return await QueryModel.findById(id)
+        .populate('createdBy', 'name email image role')
+        .exec();
+    } catch (err) {
+      throw new DatabaseError(`Failed to find query by id: ${(err as Error).message}`);
+    }
+  }
+
   async findPaginated(skip: number, limit: number, status?: QueryStatus): Promise<IQuery[]> {
     try {
       const filter = status ? { status } : {};
       return await QueryModel.find(filter)
+        .populate('createdBy', 'name email image role')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

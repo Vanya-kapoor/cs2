@@ -26,6 +26,26 @@ export const requireAuth = asyncHandler(
 );
 
 /**
+ * Attaches the authenticated user to req.user if a valid session exists,
+ * but does NOT throw if the request is unauthenticated. Useful for routes
+ * that should behave differently for logged-in users (e.g. attributing a
+ * query to its author) while still allowing anonymous access.
+ */
+export const attachUser = asyncHandler(
+  async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const session = await getAuth().api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (session?.user) {
+      req.user = session.user as unknown as AuthUser;
+    }
+
+    next();
+  },
+);
+
+/**
  * Requires that the authenticated user has one of the given roles.
  * Must be used after requireAuth.
  *
