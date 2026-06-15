@@ -6,7 +6,7 @@ import { HttpStatus } from '../constants/httpStatus';
  */
 export class BadRequestError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.BAD_REQUEST, true, details);
+    super(message, HttpStatus.BAD_REQUEST, details, true);
   }
 }
 
@@ -15,7 +15,7 @@ export class BadRequestError extends AppError {
  */
 export class UnauthorizedError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.UNAUTHORIZED, true, details);
+    super(message, HttpStatus.UNAUTHORIZED, details, true);
   }
 }
 
@@ -24,7 +24,7 @@ export class UnauthorizedError extends AppError {
  */
 export class ForbiddenError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.FORBIDDEN, true, details);
+    super(message, HttpStatus.FORBIDDEN, details, true);
   }
 }
 
@@ -33,7 +33,7 @@ export class ForbiddenError extends AppError {
  */
 export class NotFoundError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.NOT_FOUND, true, details);
+    super(message, HttpStatus.NOT_FOUND, details, true);
   }
 }
 
@@ -42,7 +42,7 @@ export class NotFoundError extends AppError {
  */
 export class ConflictError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.CONFLICT, true, details);
+    super(message, HttpStatus.CONFLICT, details, true);
   }
 }
 
@@ -51,7 +51,7 @@ export class ConflictError extends AppError {
  */
 export class ValidationError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.UNPROCESSABLE_ENTITY, true, details);
+    super(message, HttpStatus.UNPROCESSABLE_ENTITY, details, true);
   }
 }
 
@@ -60,7 +60,7 @@ export class ValidationError extends AppError {
  */
 export class InternalServerError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.INTERNAL_SERVER_ERROR, false, details);
+    super(message, HttpStatus.INTERNAL_SERVER_ERROR, details, false);
   }
 }
 
@@ -69,7 +69,7 @@ export class InternalServerError extends AppError {
  */
 export class DatabaseError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.INTERNAL_SERVER_ERROR, false, details);
+    super(message, HttpStatus.INTERNAL_SERVER_ERROR, details, false);
   }
 }
 
@@ -78,7 +78,7 @@ export class DatabaseError extends AppError {
  */
 export class AuthenticationError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.UNAUTHORIZED, false, details);
+    super(message, HttpStatus.UNAUTHORIZED, details, false);
   }
 }
 
@@ -87,7 +87,7 @@ export class AuthenticationError extends AppError {
  */
 export class AuthorizationError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.FORBIDDEN, true, details);
+    super(message, HttpStatus.FORBIDDEN, details, true);
   }
 }
 
@@ -96,6 +96,6 @@ export class AuthorizationError extends AppError {
  */
 export class ServiceError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, HttpStatus.SERVICE_UNAVAILABLE, true, details);
+    super(message, HttpStatus.SERVICE_UNAVAILABLE, details, true);
   }
 }

@@ -19,6 +19,49 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Error codes the backend attaches to 403 responses via `details.code`
+ * (see backend `requireRole` middleware) so the UI can react to specific
+ * authorization failures instead of showing a raw AxiosError.
+ */
+export const ApiErrorCode = {
+  // The cached session still carries a stale role (e.g. the user was just
+  // demoted/promoted in the DB). The frontend should drop the local session
+  // and prompt the user to sign in again so a fresh session is issued.
+  STALE_ROLE_SESSION: 'STALE_ROLE_SESSION',
+  // The user's role is admin but their email isn't verified yet.
+  EMAIL_VERIFICATION_REQUIRED: 'EMAIL_VERIFICATION_REQUIRED',
+} as const;
+
+export const getApiErrorCode = (err: unknown): string | undefined => {
+  if (!axios.isAxiosError(err)) return undefined;
+  return err.response?.data?.details?.code;
+};
+
+export const getApiErrorMessage = (err: unknown): string | undefined => {
+  if (!axios.isAxiosError(err)) return undefined;
+  return err.response?.data?.message;
+};
+
+// Custom event fired when the backend reports that the locally cached
+// session no longer matches the user's real role/permissions (e.g. they
+// were demoted while signed in). AuthContext listens for this to clear
+// local user state and prompt re-login.
+export const STALE_SESSION_EVENT = 'auth:stale-session';
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 403) {
+      const code = error.response.data?.details?.code;
+      if (code === ApiErrorCode.STALE_ROLE_SESSION) {
+        window.dispatchEvent(new CustomEvent(STALE_SESSION_EVENT));
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 interface ApiResponse<T> {
   status: string;
   message?: string;
@@ -268,6 +311,20 @@ export const apiService = {
     }
   },
 
+  // --- Admin: user management ---
+  async getUsers(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<any[]>>('/admin/users');
+      return response.data.data || [];
+    } catch (err) {
+      console.error('Failed to get users:', err);
+      return [];
+    }
+  },
+  async updateUserRole(userId: string, role: 'student' | 'admin'): Promise<void> {
+    await apiClient.patch(`/admin/users/${userId}/role`, { role });
+  },
+
   // --- Auth ---
   async signIn(email: string, password: string): Promise<void> {
     await apiClient.post('/auth/sign-in/email', { email, password });
@@ -296,6 +353,9 @@ export const apiService = {
   async signOut(): Promise<void> {
     await apiClient.post('/auth/sign-out');
   },
+  async resendVerificationEmail(email: string): Promise<void> {
+    await apiClient.post('/auth/send-verification-email', { email });
+  },
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await apiClient.get<ApiResponse<any>>('/auth/me');
@@ -314,7 +374,9 @@ export const apiService = {
       return {
         id: userId,
         name: dbUser.name || 'User',
+        email: dbUser.email,
         role: mapRole(dbUser.role),
+        emailVerified: !!dbUser.emailVerified,
         avatar: dbUser.image || '🍒',
         stats: {
           questionsAsked: statsData.totalQueries,

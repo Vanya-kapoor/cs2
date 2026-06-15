@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Question, Answer, QuestionStatus } from '../types';
 import { useAuth } from './AuthContext';
-import { apiService } from '../utils/api';
+import { useToast } from './ToastContext';
+import { apiService, ApiErrorCode, getApiErrorCode, getApiErrorMessage } from '../utils/api';
 
 interface AppContextType {
   questions: Question[];   // only queries (non-FAQ)
@@ -25,6 +26,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { currentUser, openLoginModal, authLoading, refreshCurrentUser } = useAuth();
+  const { showToast } = useToast();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [faqs, setFaqs] = useState<Question[]>([]);
@@ -61,6 +63,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return false;
     }
     return true;
+  };
+
+  // Surfaces a friendly toast for the admin-gating 403s
+  // (STALE_ROLE_SESSION / EMAIL_VERIFICATION_REQUIRED) that the backend
+  // returns, instead of letting a raw AxiosError bubble up to the console
+  // (and, for fire-and-forget calls, the page).
+  const handleAdminActionError = (err: unknown, fallbackMessage: string) => {
+    const code = getApiErrorCode(err);
+
+    if (code === ApiErrorCode.STALE_ROLE_SESSION) {
+      showToast('Your session is out of date and your permissions may have changed. Please sign in again.', 'error');
+      return;
+    }
+
+    if (code === ApiErrorCode.EMAIL_VERIFICATION_REQUIRED) {
+      showToast('Verify your email to unlock admin actions. Check the banner above for a resend link.', 'error');
+      return;
+    }
+
+    const message = getApiErrorMessage(err) || fallbackMessage;
+    showToast(message, 'error');
+    console.error(fallbackMessage, err);
   };
 
   const refreshData = async () => {
@@ -112,8 +136,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // and the query section shows the correct locked state
       await loadBackendData();
     } catch (err) {
-      console.error('Failed to accept/approve answer on backend:', err);
-      throw err;
+      handleAdminActionError(err, 'Failed to approve this reply. Please try again.');
     }
   };
 
@@ -129,8 +152,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await apiService.createFaq(q.title, bestAnswer.content);
       await loadBackendData();
     } catch (err) {
-      console.error('Failed to convert question to FAQ:', err);
-      throw err;
+      handleAdminActionError(err, 'Failed to convert this question to an FAQ. Please try again.');
     }
   };
 
@@ -148,7 +170,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         })
       );
     } catch (err) {
-      console.error('Failed to delete reply:', err);
+      handleAdminActionError(err, 'Failed to delete this reply. Please try again.');
       throw err;
     }
   };
@@ -165,8 +187,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setQuestions(prev => prev.filter(q => q.id !== questionId));
       }
     } catch (err) {
-      console.error('Failed to delete FAQ/Query on backend:', err);
-      throw err;
+      handleAdminActionError(err, 'Failed to delete this item. Please try again.');
     }
   };
 

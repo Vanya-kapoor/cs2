@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, HelpCircle, ShieldAlert, Award, Star, Trash2 } from 'lucide-react';
+import { ShieldCheck, HelpCircle, ShieldAlert, Award, Star, Trash2, Users, ShieldOff, Loader2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { apiService } from '../utils/api';
 import { StatusBadge, EmptyState, Skeleton, SkeletonStatsCard, SkeletonCard } from '../components/CommonWidgets';
 
 export const AdminDashboard: React.FC = () => {
@@ -11,8 +13,55 @@ export const AdminDashboard: React.FC = () => {
   // Use separate faqs and questions arrays
   const { questions, faqs, convertToFAQ, deleteQuestion, getStats } = useAppContext();
   const { currentUser, authLoading } = useAuth();
+  const { showToast } = useToast();
 
   const stats = getStats();
+
+  // --- User management (role promote/demote) ---
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'ADMIN') return;
+    let active = true;
+    (async () => {
+      setUsersLoading(true);
+      const data = await apiService.getUsers();
+      if (active) {
+        setUsers(data);
+        setUsersLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [currentUser]);
+
+  const handleRoleToggle = async (user: any) => {
+    const targetId = user._id || user.id;
+    const nextRole = user.role === 'admin' ? 'student' : 'admin';
+
+    if (currentUser && (currentUser.id === targetId)) {
+      showToast("You can't change your own role.", 'error');
+      return;
+    }
+
+    setUpdatingUserId(targetId);
+    try {
+      await apiService.updateUserRole(targetId, nextRole);
+      setUsers(prev => prev.map(u => (u._id || u.id) === targetId ? { ...u, role: nextRole } : u));
+      showToast(
+        nextRole === 'admin'
+          ? `${user.name} is now an admin. Their active sessions were revoked, so they'll need to sign in again to use admin features.`
+          : `${user.name} was demoted to student. Their active sessions were revoked immediately.`,
+        'success',
+      );
+    } catch (err) {
+      showToast('Failed to update this user\'s role. Please try again.', 'error');
+      console.error('Failed to update user role:', err);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -171,6 +220,77 @@ export const AdminDashboard: React.FC = () => {
         ) : (
           <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
             No verified FAQs yet.
+          </div>
+        )}
+      </div>
+
+      {/* User Management — promote/demote roles */}
+      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
+        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
+          <Users size={18} className="text-indigo-500" />
+          <span>User Roles ({users.length})</span>
+        </h2>
+        <p className="text-[11px] text-slate-400 leading-relaxed -mt-2">
+          Changing a role here revokes that user's active sessions immediately, so promotions and demotions take effect right away instead of waiting for their session to expire.
+        </p>
+
+        {usersLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        ) : users.length > 0 ? (
+          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+            {users.map(u => {
+              const targetId = u._id || u.id;
+              const isSelf = currentUser?.id === targetId;
+              const isUpdating = updatingUserId === targetId;
+              const isAdminUser = u.role === 'admin';
+              return (
+                <div key={targetId} className="p-3 border border-slate-100 rounded-lg flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-800 truncate">{u.name}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-semibold leading-none ${
+                        isAdminUser ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        {u.role}
+                      </span>
+                      {isAdminUser && !u.emailVerified && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded uppercase font-semibold leading-none bg-amber-50 text-amber-700 border border-amber-200">
+                          Email unverified
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{u.email}</p>
+                  </div>
+                  <button
+                    onClick={() => handleRoleToggle(u)}
+                    disabled={isSelf || isUpdating}
+                    title={isSelf ? "You can't change your own role" : isAdminUser ? 'Demote to student' : 'Promote to admin'}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded text-[9px] font-semibold uppercase transition-colors border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                      isAdminUser
+                        ? 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+                        : 'bg-blue-600 text-white border-transparent hover:bg-blue-700'
+                    }`}
+                  >
+                    {isUpdating ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : isAdminUser ? (
+                      <ShieldOff size={10} />
+                    ) : (
+                      <ShieldCheck size={10} />
+                    )}
+                    <span>{isAdminUser ? 'Demote' : 'Promote'}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+            No users found.
           </div>
         )}
       </div>

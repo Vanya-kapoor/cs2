@@ -29,10 +29,18 @@ export const requireAuth = asyncHandler(
  * Requires that the authenticated user has one of the given roles.
  * Must be used after requireAuth.
  *
- * Admin gate: if admin role is required, the user must also have a verified
- * email. This covers the case where someone is promoted to admin but never
- * clicks the verification link — they stay locked out of admin routes until
- * they do.
+ * Two extra checks beyond the basic role check, each surfaced via a
+ * `details.code` on the thrown ForbiddenError so the frontend can react
+ * appropriately instead of showing a raw AxiosError:
+ *
+ *  - STALE_ROLE_SESSION: the user's cached session still has an old role
+ *    (e.g. they were demoted in the DB but their better-auth session/cookie
+ *    cache hasn't refreshed yet). The frontend should re-sync the session
+ *    (or sign the user out) rather than retry the same request.
+ *
+ *  - EMAIL_VERIFICATION_REQUIRED: the user's role is admin but their email
+ *    is not verified yet (e.g. they were just promoted to admin). The
+ *    frontend should show a persistent banner prompting verification.
  */
 export const requireRole = (...roles: Role[]) =>
   asyncHandler(async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
@@ -41,6 +49,16 @@ export const requireRole = (...roles: Role[]) =>
     }
 
     if (!roles.includes(req.user.role as Role)) {
+      // If admin access is required but the cached session still shows a
+      // non-admin role, the user may have just been demoted (or promoted)
+      // and their session cookie cache hasn't refreshed yet.
+      if (roles.includes(Roles.ADMIN)) {
+        throw new ForbiddenError(
+          `Forbidden – requires one of roles: ${roles.join(', ')}`,
+          { code: 'STALE_ROLE_SESSION' },
+        );
+      }
+
       throw new ForbiddenError(
         `Forbidden – requires one of roles: ${roles.join(', ')}`,
       );
@@ -51,7 +69,8 @@ export const requireRole = (...roles: Role[]) =>
     // they cannot exercise admin privileges.
     if (roles.includes(Roles.ADMIN) && req.user.role === Roles.ADMIN && !req.user.emailVerified) {
       throw new ForbiddenError(
-        'Admin access requires a verified email address. Please check your inbox and verify your email to continue or send the verifiction email.',
+        'Admin access requires a verified email address. Please check your inbox and verify your email to continue or resend the verification email.',
+        { code: 'EMAIL_VERIFICATION_REQUIRED' },
       );
     }
 

@@ -7,6 +7,7 @@ import { FaqController } from './modules/faq/faq.controller';
 import { QueryController } from './modules/query/query.controller';
 import { ReplyController } from './modules/reply/reply.controller';
 import { ChatController } from './modules/chat/chat.controller';
+import { AdminUserController } from './modules/admin/admin.controller';
 import badgeRoutes from './modules/badge/badge.routes';
 import notificationRoutes from './modules/notification/notification.routes';
 import { errorMiddleware } from './core/middleware/error.middleware';
@@ -38,6 +39,7 @@ const createApp = (): Application => {
   const queryController = new QueryController();
   const replyController = new ReplyController();
   const chatController = new ChatController();
+  const adminUserController = new AdminUserController();
 
   /**
    * better-auth handles all /api/auth/* sub-routes internally.
@@ -79,6 +81,15 @@ const createApp = (): Application => {
   app.use('/api/chat', chatController.router);
   app.use('/api/badges', badgeRoutes);
   app.use('/api/notifications', notificationRoutes);
+
+  /**
+   * Admin – user management:
+   *   GET   /api/admin/users          – list users (admin)
+   *   PATCH /api/admin/users/:id/role – change a user's role (admin),
+   *                                      revokes that user's sessions so the
+   *                                      change takes effect immediately
+   */
+  app.use('/api/admin', adminUserController.router);
 
   // ─── 404 & Error Handlers ─────────────────────────────────────────────
   app.use(notFoundMiddleware);
