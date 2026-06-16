@@ -1,6 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-cream: #FFFFFF;
+  --color-brand-yellow: #EFF6FF;
+  --color-brand-green: #ECFDF5;
+  --color-brand-blue: #EFF6FF;
+  --color-brand-pink: #FDF2F8;
+  --color-brand-purple: #F5F3FF;
+  --color-brand-orange: #FFF7ED;
+
+  --shadow-neo-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-neo-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-neo-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+
+  --font-comic: "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
 
 @layer base {
   body {

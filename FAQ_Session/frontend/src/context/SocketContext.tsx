@@ -2,8 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
-const SOCKET_URL = process.env.REACT_APP_API_BASE_URL
-  ? process.env.REACT_APP_API_BASE_URL.replace('/api', '')
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL.replace('/api', '')
   : 'http://localhost:5000';
 
 interface SocketContextProps {
