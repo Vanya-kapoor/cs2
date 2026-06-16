@@ -1,6 +1,6 @@
-# FAQ RAG Frontend — React + TypeScript
+# FAQ RAG Frontend — React + TypeScript + Vite
 
-A React 19 frontend for the FAQ RAG system, featuring authentication modals, query submission, FAQ browsing, an AI-powered chatbot, and a gamification leaderboard.
+A React 19 frontend built with Vite for the FAQ RAG system, featuring authentication modals, query submission, FAQ browsing, an AI-powered chatbot, and a gamification leaderboard.
 
 ---
 
@@ -9,14 +9,15 @@ A React 19 frontend for the FAQ RAG system, featuring authentication modals, que
 | Technology | Version | Purpose |
 |---|---|---|
 | React | 19 | UI framework |
-| TypeScript | 4.9 | Type safety |
+| TypeScript | 6.0 | Type safety |
+| Vite | 8 | Build tool & dev server |
 | React Router | v7 | Client-side routing |
 | Axios | 1.x | HTTP client |
 | TanStack Query | v5 | Server state management |
 | Zod | 4.x | Schema validation |
 | react-hook-form | 7.x | Form state management |
-| @hookform/resolvers | 3.x | Zod + react-hook-form bridge |
-| Tailwind CSS | 3.4 | Utility-first styling |
+| @hookform/resolvers | 5.x | Zod + react-hook-form bridge |
+| Tailwind CSS | 4.3 | Utility-first styling |
 | Framer Motion | 12 | Animations |
 | Lucide React | latest | Icons |
 
@@ -33,21 +34,39 @@ npm install
 
 ### 2. Configure environment
 
-Create a `.env` file in the `frontend/` directory:
+Create a `.env.local` file in the `frontend/` directory:
 
 ```env
-REACT_APP_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
+
+> **Note:** Vite uses `VITE_` prefix for environment variables. Replace `REACT_APP_` with `VITE_`.
 
 ### 3. Start the development server
 
 ```bash
-npm start
+npm run dev
 ```
 
 App runs at http://localhost:3000
 
-The backend must be running at the URL set in `REACT_APP_API_BASE_URL` for API calls to work.
+The backend must be running at the URL set in `VITE_API_BASE_URL` for API calls to work.
+
+---
+
+## Building for Production
+
+```bash
+npm run build
+```
+
+Outputs optimized build to `dist/`
+
+Preview the production build locally:
+
+```bash
+npm run preview
+```
 
 ---
 
@@ -193,9 +212,9 @@ src/
 ## Available Scripts
 
 ```bash
-npm start       # Dev server at http://localhost:3000
-npm run build   # Production build to /build
-npm test        # Run tests in watch mode
+npm run dev      # Dev server at http://localhost:3000 (with HMR)
+npm run build    # Production build to /dist
+npm run preview  # Preview production build locally
 ```
 
 ---
@@ -204,4 +223,18 @@ npm test        # Run tests in watch mode
 
 | Variable | Default | Description |
 |---|---|---|
-| REACT_APP_API_BASE_URL | http://localhost:5000/api | Backend API base URL |
+| VITE_API_BASE_URL | http://localhost:5000/api | Backend API base URL |
+
+> **Important:** Use `VITE_` prefix for all environment variables in `.env.local`. Access them in code as `import.meta.env.VITE_API_BASE_URL`.
+
+---
+
+## Vite Migration Notes
+
+This project was migrated from Create React App to Vite for faster builds and better dev experience:
+
+- **Faster dev server**: Vite uses native ES modules with HMR (Hot Module Replacement)
+- **Smaller builds**: Optimized production bundles
+- **Better DX**: Instant server startup and faster HMR
+- **Updated build commands**: `npm run dev` instead of `npm start`
+- **Environment variables**: Use `VITE_` prefix and access via `import.meta.env`
