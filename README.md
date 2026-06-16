@@ -12,8 +12,6 @@ The FAQ RAG (Retrieval-Augmented Generation) system is an intelligent knowledge 
 
 **Key Innovation**: A complete lifecycle from user questions → community replies → admin-approved answers → an explicit, deliberate promotion step into the vector-indexed FAQ knowledge base → AI-augmented chatbot responses, with real-time notifications pushed to users at every stage.
 
-> **Architecture note**: reply approval and FAQ creation used to be a single automatic step. They are now two distinct admin actions — approving a reply only resolves the query and notifies the contributor; turning that resolved query into a searchable FAQ entry is a deliberate follow-up call (`POST /api/faqs/promote/:queryId`). This gives admins a review checkpoint before anything is added to the knowledge base the chatbot draws from.
-
 ---
 
 ## Product Vision & Goals
