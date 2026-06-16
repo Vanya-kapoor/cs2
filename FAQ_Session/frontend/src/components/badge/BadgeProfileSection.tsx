@@ -13,7 +13,7 @@ export const BadgeProfileSection: React.FC<BadgeProfileSectionProps> = ({ userId
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
         const response = await fetch(`${apiBase}/badges/users/${userId}`, {
           credentials: 'include',
         });
