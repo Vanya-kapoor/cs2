@@ -48,9 +48,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded leading-none uppercase font-semibold">
                   {currentUser.role}
                 </span>
-                {/* <span className="text-[11px] font-medium text-slate-500">
+                <span className="text-[11px] font-medium text-slate-500">
                   🏆 {currentUser.stats.reputation} Rep
-                </span> */}
+                </span>
               </div>
             </div>
 

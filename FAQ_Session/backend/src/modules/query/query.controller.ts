@@ -9,7 +9,7 @@ import { requireAuth, requireRole, attachUser } from '../../core/middleware/auth
 import { sendSuccess, sendCreated, sendPaginated } from '../../core/utils/response';
 import { Messages } from '../../core/constants/messages';
 import { Roles } from '../../core/constants/roles';
-import { CreateQueryDto, ReportQueryDto } from './query.dto';
+import { CreateQueryDto } from './query.dto';
 
 export class QueryController extends BaseController {
   private readonly queryService: QueryService;
@@ -45,14 +45,6 @@ export class QueryController extends BaseController {
       requireRole(Roles.ADMIN),
       asyncHandler(this.deleteQuery.bind(this)),
     );
-
-    // Report a query
-    this.router.post(
-      '/:id/report',
-      requireAuth,
-      validate(ReportQueryDto),
-      asyncHandler(this.reportQuery.bind(this)),
-    );
   }
 
   private async createQuery(req: Request, res: Response): Promise<void> {
@@ -75,13 +67,5 @@ export class QueryController extends BaseController {
   private async deleteQuery(req: Request, res: Response): Promise<void> {
     await this.queryService.deleteQuery(String(req.params['id']));
     sendSuccess(res, null, Messages.QUERY_DELETED);
-  }
-
-  private async reportQuery(req: Request, res: Response): Promise<void> {
-    const queryId = String(req.params['id']);
-    const userId = String(req.user!.id);
-    const { reason } = req.body;
-    await this.queryService.reportQuery(queryId, userId, reason);
-    sendSuccess(res, null, 'Query reported successfully');
   }
 }

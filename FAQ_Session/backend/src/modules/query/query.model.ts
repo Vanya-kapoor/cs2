@@ -15,10 +15,6 @@ const querySchema = new Schema<IQuery>(
       enum: ['pending', 'resolved'] as QueryStatus[],
       default: 'pending',
     },
-    reportCount: { type: Number, default: 0 },
-    isReported: { type: Boolean, default: false },
-    needsAdminReview: { type: Boolean, default: false },
-    isHidden: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

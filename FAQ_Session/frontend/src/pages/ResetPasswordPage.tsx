@@ -18,6 +18,8 @@ const ResetPasswordPage: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
+    setError,
+    watch,
   } = useForm<ResetPasswordFormData>({ resolver: zodResolver(resetPasswordSchema) });
 
   const [showPassword, setShowPassword] = React.useState(false);

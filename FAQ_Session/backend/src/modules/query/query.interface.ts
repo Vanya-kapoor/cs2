@@ -8,10 +8,6 @@ export interface IQuery extends Document {
   description?: string;
   createdBy?: Types.ObjectId | null; // null for unauthenticated users
   status: QueryStatus;
-  reportCount: number;
-  isReported: boolean;
-  needsAdminReview: boolean;
-  isHidden: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

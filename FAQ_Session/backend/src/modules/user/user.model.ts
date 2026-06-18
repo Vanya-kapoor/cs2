@@ -24,8 +24,6 @@ const userSchema = new Schema<IUser>(
         earnedAt: { type: Date, default: Date.now },
       },
     ],
-    warnings: { type: Number, default: 0 },
-    reputationPenalty: { type: Number, default: 0 },
   },
   {
     timestamps: true,

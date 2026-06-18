@@ -23,7 +23,7 @@ export class NotificationController extends BaseController {
 
   public markAsRead = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
-    const id = String(req.params.id);
+    const { id } = req.params;
     const notification = await this.notificationService.markAsRead(id, userId);
     sendSuccess(res, notification, Messages.SUCCESS);
   });
@@ -36,7 +36,7 @@ export class NotificationController extends BaseController {
 
   public deleteNotification = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
-    const id = String(req.params.id);
+    const { id } = req.params;
     await this.notificationService.deleteNotification(id, userId);
     sendSuccess(res, null, Messages.SUCCESS);
   });

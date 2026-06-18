@@ -1,66 +1,20 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ShieldCheck, 
-  HelpCircle, 
-  ShieldAlert, 
-  Award, 
-  Star, 
-  Trash2, 
-  Flag, 
-  AlertOctagon,
-  Users,
-  ShieldOff,
-  Loader2,
-  ExternalLink,
-  CheckCircle2
-} from 'lucide-react';
+import { ShieldCheck, HelpCircle, ShieldAlert, Award, Star, Trash2, Users, ShieldOff, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { apiService } from '../utils/api';
 import { StatusBadge, EmptyState, Skeleton, SkeletonStatsCard, SkeletonCard } from '../components/CommonWidgets';
-import { Question } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { 
-    questions, 
-    faqs,
-    promoteToFaq, 
-    deleteQuestion, 
-    getStats,
-    getReportedQueries,
-    ignoreQuery,
-    warnQuery,
-    penalizeQuery,
-    deleteReportedQuery
-  } = useAppContext();
+  const { questions, faqs, promoteToFaq, deleteQuestion, getStats } = useAppContext();
   const { currentUser, authLoading } = useAuth();
   const { showToast } = useToast();
 
   const stats = getStats();
-  const [reportedQueries, setReportedQueries] = useState<Question[]>([]);
-  const [loadingReported, setLoadingReported] = useState(true);
-
-  const fetchReports = useCallback(async () => {
-    setLoadingReported(true);
-    try {
-      const data = await getReportedQueries();
-      setReportedQueries(data);
-    } catch (err) {
-      console.error("Failed to fetch reported queries:", err);
-    } finally {
-      setLoadingReported(false);
-    }
-  }, [getReportedQueries]);
-
-  useEffect(() => {
-    if (currentUser?.role === 'ADMIN') {
-      fetchReports();
-    }
-  }, [currentUser, fetchReports]);
 
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -72,17 +26,10 @@ export const AdminDashboard: React.FC = () => {
     let active = true;
     (async () => {
       setUsersLoading(true);
-      try {
-        const data = await apiService.getUsers();
-        if (active) {
-          setUsers(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-      } finally {
-        if (active) {
-          setUsersLoading(false);
-        }
+      const data = await apiService.getUsers();
+      if (active) {
+        setUsers(data);
+        setUsersLoading(false);
       }
     })();
     return () => { active = false; };
@@ -123,7 +70,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-
   if (authLoading) {
     return (
       <div className="space-y-8">
@@ -152,44 +98,6 @@ export const AdminDashboard: React.FC = () => {
 
   // Resolved queries: show promote button only if no FAQ linked yet
   const resolvedQueries = questions.filter(q => q.status === 'RESOLVED');
-
-  const handleIgnore = async (id: string) => {
-    try {
-      await ignoreQuery(id);
-      await fetchReports();
-    } catch (err: any) {
-      alert(err.message || "Failed to ignore reports");
-    }
-  };
-
-  const handleWarn = async (id: string) => {
-    try {
-      await warnQuery(id);
-      await fetchReports();
-    } catch (err: any) {
-      alert(err.message || "Failed to warn user");
-    }
-  };
-
-  const handlePenalize = async (id: string) => {
-    try {
-      await penalizeQuery(id);
-      await fetchReports();
-    } catch (err: any) {
-      alert(err.message || "Failed to penalize user");
-    }
-  };
-
-  const handleDeleteReported = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this reported query?")) {
-      try {
-        await deleteReportedQuery(id);
-        await fetchReports();
-      } catch (err: any) {
-        alert(err.message || "Failed to delete query");
-      }
-    }
-  };
 
   return (
     <motion.div
@@ -347,88 +255,6 @@ export const AdminDashboard: React.FC = () => {
         ) : (
           <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
             No resolved queries yet.
-          </div>
-        )}
-      </div>
-
-      {/* Reported Queries Queue */}
-      <div className="p-6 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4">
-        <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
-          <Flag size={18} className="text-red-500" />
-          <span>Reported Queries Queue ({reportedQueries.length})</span>
-        </h2>
-
-        {loadingReported ? (
-          <div className="text-center py-4 text-xs text-slate-400">Loading reports...</div>
-        ) : reportedQueries.length > 0 ? (
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-            {reportedQueries.map((q) => (
-              <div
-                key={q.id}
-                className="p-4 border border-red-100 bg-red-50/10 rounded-xl flex flex-col gap-3 hover:bg-red-50/20 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <AlertOctagon size={10} />
-                    Report Count: {q.reportCount}
-                  </span>
-                </div>
-
-                <div>
-                  <h3
-                    onClick={() => navigate(`/questions/${q.id}`)}
-                    className="font-semibold text-sm hover:text-blue-600 cursor-pointer text-slate-800 transition-colors"
-                  >
-                    {q.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {q.description}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1 flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      By: <span className="font-semibold text-slate-700">{q.author.name}</span>
-                      {q.author.warnings && q.author.warnings > 0 ? (
-                        <span className="text-red-600 ml-1">({q.author.warnings} warnings)</span>
-                      ) : null}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleIgnore(q.id)}
-                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[9px] font-semibold uppercase transition-colors border border-slate-200 cursor-pointer"
-                    >
-                      Ignore
-                    </button>
-                    <button
-                      onClick={() => handleWarn(q.id)}
-                      className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-[9px] font-semibold uppercase transition-colors cursor-pointer"
-                    >
-                      Warn &amp; Hide
-                    </button>
-                    <button
-                      onClick={() => handlePenalize(q.id)}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[9px] font-semibold uppercase transition-colors cursor-pointer"
-                    >
-                      Penalize
-                    </button>
-                    <button
-                      onClick={() => handleDeleteReported(q.id)}
-                      className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-semibold uppercase transition-colors border border-rose-200 cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
-            No queries require admin review.
           </div>
         )}
       </div>

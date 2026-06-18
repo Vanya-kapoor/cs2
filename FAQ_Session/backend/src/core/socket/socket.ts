@@ -19,7 +19,7 @@ export const initSocket = (httpServer: HttpServer) => {
     },
   });
 
-  io.use(async (socket: Socket, next: (err?: Error) => void) => {
+  io.use(async (socket, next) => {
     try {
       // Authenticate using better-auth
       // Check cookies specifically for better-auth
