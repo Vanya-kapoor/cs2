@@ -9,6 +9,7 @@ import { EmptyState, SkeletonCard } from '../components/CommonWidgets';
 export const FAQPage: React.FC = () => {
   const { faqs, loading } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
   useEffect(() => {
@@ -17,12 +18,11 @@ export const FAQPage: React.FC = () => {
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
+
     const newParams = new URLSearchParams(searchParams);
-    if (query) {
-      newParams.set('search', query);
-    } else {
-      newParams.delete('search');
-    }
+    if (query) newParams.set('search', query);
+    else newParams.delete('search');
+
     setSearchParams(newParams);
   };
 
@@ -36,7 +36,11 @@ export const FAQPage: React.FC = () => {
         q.tags.some(t => t.toLowerCase().includes(s))
       );
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    );
 
   return (
     <motion.div
@@ -46,13 +50,14 @@ export const FAQPage: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="space-y-6"
     >
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 font-sans">
             Verified FAQs
           </h1>
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
-            Browse official responses and resolved queries
+            Browse official verified FAQs
           </p>
         </div>
       </div>
@@ -65,6 +70,7 @@ export const FAQPage: React.FC = () => {
         />
       </div>
 
+      {/* FAQs Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
           {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
@@ -84,4 +90,5 @@ export const FAQPage: React.FC = () => {
     </motion.div>
   );
 };
+
 export default FAQPage;

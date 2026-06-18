@@ -13,6 +13,8 @@ export interface IUser extends Document {
   emailVerified: boolean;
   image?: string;
   badges: IUserBadge[];
+  warnings: number;
+  reputationPenalty: number;
   createdAt: Date;
   updatedAt: Date;
 }

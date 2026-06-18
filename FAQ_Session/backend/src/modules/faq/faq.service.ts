@@ -19,13 +19,14 @@ export class FaqService extends BaseService {
     super();
   }
 
-  async getFaqs(query: PaginationQuery): Promise<PaginatedResult<IFaq>> {
-    const { page, limit, skip } = parsePagination(query);
-    const [faqs, total] = await Promise.all([
-      this.faqRepo.findPaginated(skip, limit),
-      this.faqRepo.countDocuments(),
-    ]);
-    return buildPaginatedResult(faqs, total, page, limit);
+  async getFaqs(query: PaginationQuery): 
+  Promise<PaginatedResult<IFaq>> { 
+    const { page, limit, skip } = parsePagination(query); 
+    const [faqs, total] = await Promise.all([ 
+      this.faqRepo.findPaginated(skip, limit), 
+      this.faqRepo.countDocuments(), 
+    ]); 
+    return buildPaginatedResult(faqs, total, page, limit); 
   }
 
   async getFaqById(id: string): Promise<IFaq> {

@@ -16,6 +16,8 @@ export interface User {
   avatar: string;
   stats: UserStats;
   badges: string[];
+  warnings?: number;
+  reputationPenalty?: number;
 }
 
 export interface Answer {
@@ -41,6 +43,10 @@ export interface Question {
   createdAt: string;
   author: User;
   answers: Answer[];
+  reportCount?: number;
+  isReported?: boolean;
+  needsAdminReview?: boolean;
+  isHidden?: boolean;
   /**
    * Set on queries that have been promoted to FAQ.
    * Used by the admin dashboard to show "View FAQ" instead of "Promote to FAQ".
